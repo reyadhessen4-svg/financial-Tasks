@@ -1,0 +1,1972 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FinanceTrack – نظام المدير المالي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-page:#F0F2F7;--bg-card:#fff;--bg-sidebar:#1B2341;
+  --bg-sh:rgba(255,255,255,.07);--bg-sa:rgba(255,255,255,.14);
+  --accent:#3D6FF0;--accent-l:#EEF2FE;--accent-d:#2B52CC;
+  --green:#1A9E6E;--green-l:#E3F8EF;
+  --amber:#C97B1A;--amber-l:#FEF3E0;
+  --red:#D63B3B;--red-l:#FEECEC;
+  --purple:#6B4FCF;--purple-l:#F0ECFC;
+  --teal:#0D8B8B;--teal-l:#E0F5F5;
+  --tp:#111827;--ts:#6B7280;--th:#9CA3AF;
+  --ts-sb:rgba(255,255,255,.75);--ta-sb:#fff;
+  --bd:#E5E7EB;--bds:#D1D5DB;
+  --r-sm:6px;--r-md:10px;--r-lg:16px;--r-xl:20px;
+  --sh-card:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh-lg:0 12px 36px rgba(0,0,0,.15);
+  --font:'Tajawal',sans-serif;--sw:240px;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:var(--tp);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.layout{display:flex;min-height:100vh}
+
+/* ── Sidebar ── */
+.sidebar{width:var(--sw);background:var(--bg-sidebar);position:fixed;top:0;right:0;height:100vh;overflow-y:auto;z-index:50;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+.sb-brand{padding:1.4rem 1.25rem 1rem;border-bottom:1px solid rgba(255,255,255,.09)}
+.brand-row{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+.brand-icon{width:38px;height:38px;background:var(--accent);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0}
+.brand-name{font-size:15px;font-weight:700;color:#fff}
+.brand-sub{font-size:11px;color:var(--ts-sb)}
+.mgr-chip{display:flex;align-items:center;gap:9px;background:var(--bg-sh);border-radius:var(--r-md);padding:8px 10px;margin-top:.75rem;cursor:pointer;transition:background .15s;border:1px solid transparent}
+.mgr-chip:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.15)}
+.mgr-av{width:32px;height:32px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.mgr-info{min-width:0}
+.mgr-info .mn{font-size:13px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mgr-info .mr{font-size:11px;color:var(--ts-sb);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mgr-pencil{margin-right:auto;color:rgba(255,255,255,.38);font-size:14px;transition:color .15s;flex-shrink:0}
+.mgr-chip:hover .mgr-pencil{color:rgba(255,255,255,.8)}
+.mgr-edit{display:none;margin-top:8px;animation:fadeIn .15s}
+.mgr-input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--r-sm);color:#fff;padding:6px 10px;font-size:13px;font-family:var(--font);outline:none}
+.mgr-input::placeholder{color:rgba(255,255,255,.4)}
+.mgr-input:focus{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4)}
+.mgr-btns{display:flex;gap:5px;margin-top:6px}
+.mgr-btn{flex:1;background:rgba(255,255,255,.12);border:none;border-radius:var(--r-sm);color:#fff;padding:5px 8px;font-size:12px;font-family:var(--font);cursor:pointer;transition:background .12s;display:flex;align-items:center;justify-content:center;gap:4px}
+.mgr-btn:hover{background:rgba(255,255,255,.22)}
+.mgr-btn.save{background:rgba(61,111,240,.6)}
+.mgr-btn.save:hover{background:rgba(61,111,240,.85)}
+.sb-nav{padding:.75rem .75rem 0;flex:1}
+.sb-foot{padding:.5rem .75rem 1rem}
+.nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.32);padding:.8rem .5rem .4rem}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-md);cursor:pointer;font-size:13.5px;color:var(--ts-sb);margin-bottom:2px;transition:background .14s,color .14s;user-select:none;border:1px solid transparent}
+.nav-item i{font-size:17px;flex-shrink:0}
+.nav-item:hover{background:var(--bg-sh);color:#fff}
+.nav-item.active{background:var(--bg-sa);color:var(--ta-sb);font-weight:500;border-color:rgba(255,255,255,.08)}
+.nav-item .bdg{margin-right:auto;background:var(--accent);color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 7px;min-width:18px;text-align:center}
+.nav-item .bdg.warn{background:var(--amber)}
+
+/* ── Main ── */
+.main{margin-right:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--bg-card);border-bottom:1px solid var(--bd);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;box-shadow:var(--sh-card)}
+.topbar-title{font-size:17px;font-weight:600}
+.topbar-acts{display:flex;gap:8px;align-items:center}
+.content{padding:1.75rem 2rem;flex:1}
+.page{display:none}.page.active{display:block}
+.ph{margin-bottom:1.5rem}
+.ph h1{font-size:22px;font-weight:700}
+.ph p{font-size:13.5px;color:var(--ts);margin-top:2px}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+.sc{background:var(--bg-card);border-radius:var(--r-lg);border:1px solid var(--bd);padding:1.25rem 1.25rem 1rem;box-shadow:var(--sh-card);position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;right:0;left:0;height:3px;border-radius:var(--r-lg) var(--r-lg) 0 0}
+.sc.blue::before{background:var(--accent)}.sc.green::before{background:var(--green)}
+.sc.amber::before{background:var(--amber)}.sc.red::before{background:var(--red)}
+.sc-icon{width:36px;height:36px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:6px}
+.sc-icon.blue{background:var(--accent-l);color:var(--accent)}.sc-icon.green{background:var(--green-l);color:var(--green)}
+.sc-icon.amber{background:var(--amber-l);color:var(--amber)}.sc-icon.red{background:var(--red-l);color:var(--red)}
+.sc-val{font-size:28px;font-weight:700;line-height:1.1}
+.sc-val.blue{color:var(--accent)}.sc-val.green{color:var(--green)}.sc-val.amber{color:var(--amber)}.sc-val.red{color:var(--red)}
+.sc-lbl{font-size:12.5px;color:var(--ts)}
+
+/* ── Card ── */
+.card{background:var(--bg-card);border-radius:var(--r-lg);border:1px solid var(--bd);box-shadow:var(--sh-card);overflow:hidden;margin-bottom:1.25rem}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.5rem;border-bottom:1px solid var(--bd)}
+.ch h2{font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+.ch h2 i{font-size:17px;color:var(--accent)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+
+/* ── Progress ── */
+.pb{height:6px;background:var(--bg-page);border-radius:99px;overflow:hidden;flex:1}
+.pf{height:100%;border-radius:99px;background:var(--accent);transition:width .4s}
+.pf.green{background:var(--green)}.pf.amber{background:var(--amber)}.pf.red{background:var(--red)}
+
+/* ── Dept perf ── */
+.dpr{display:flex;align-items:center;gap:12px;padding:12px 1.5rem;border-bottom:1px solid var(--bd);transition:background .12s}
+.dpr:last-child{border-bottom:none}
+.dpr:hover{background:#F9FAFF}
+.dn{font-size:13.5px;font-weight:500;width:130px;flex-shrink:0;display:flex;align-items:center;gap:6px}
+.dn i{font-size:15px;color:var(--ts)}
+.dpct{font-size:13px;font-weight:600;width:40px;text-align:left;flex-shrink:0}
+.dcnt{font-size:12px;color:var(--ts);width:65px;flex-shrink:0;text-align:left}
+
+/* ── User rows ── */
+.ur{display:flex;align-items:center;gap:12px;padding:12px 1.5rem;border-bottom:1px solid var(--bd);transition:background .12s}
+.ur:last-child{border-bottom:none}
+.ur:hover{background:#F9FAFF}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.av.blue{background:var(--accent-l);color:var(--accent-d)}.av.teal{background:var(--teal-l);color:var(--teal)}
+.av.purple{background:var(--purple-l);color:var(--purple)}.av.coral{background:#FEF0EA;color:#C45A2A}
+.av.green{background:var(--green-l);color:var(--green)}
+.ui{flex:1;min-width:0}
+.un{font-size:13.5px;font-weight:600}
+.uro{font-size:11.5px;color:var(--ts);margin-top:1px}
+.uprog{display:flex;align-items:center;gap:8px;margin-top:5px}
+.upct{font-size:11px;color:var(--ts);min-width:30px;text-align:left}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:6px;flex-wrap:wrap;padding:.75rem 1rem;background:#F8F9FC;border-bottom:1px solid var(--bd)}
+.tab{padding:6px 14px;border-radius:99px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;color:var(--ts);background:transparent;font-family:var(--font);transition:all .15s}
+.tab:hover{background:var(--bg-card);border-color:var(--bd);color:var(--tp)}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid var(--bd);background:var(--bg-card);color:var(--tp);transition:all .15s;white-space:nowrap}
+.btn i{font-size:15px}
+.btn:hover{background:var(--bg-page);border-color:var(--bds)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent-d);border-color:var(--accent-d)}
+.btn-success{background:var(--green-l);color:var(--green);border-color:#B6EDDA}
+.btn-success:hover{background:#C9F4E6}
+.btn-danger{background:var(--red-l);color:var(--red);border-color:#F5C0C0}
+.btn-danger:hover{background:#FCDCDC}
+.btn-warning{background:var(--amber-l);color:var(--amber);border-color:#FAD9A1}
+.btn-warning:hover{background:#FCE8C0}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-icon{padding:6px 7px;border-radius:var(--r-sm)}
+.btn-ghost-light{background:transparent;color:var(--ts-sb);border-color:rgba(255,255,255,.18)}
+.btn-ghost-light:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.25)}
+
+/* ── Pills ── */
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:99px;font-size:11.5px;font-weight:600;padding:3px 10px}
+.pill i{font-size:12px}
+.pill-done{background:var(--green-l);color:var(--green)}
+.pill-review{background:var(--amber-l);color:var(--amber)}
+.pill-pending{background:#F3F4F6;color:#6B7280}
+.prio-b{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;border-radius:99px;padding:2px 8px}
+.ph-h{background:var(--red-l);color:var(--red)}
+.ph-m{background:var(--amber-l);color:var(--amber)}
+.ph-l{background:var(--green-l);color:var(--green)}
+
+/* ── Task rows ── */
+.tr{display:flex;align-items:flex-start;gap:12px;padding:14px 1.5rem;border-bottom:1px solid var(--bd);transition:background .12s}
+.tr:last-child{border-bottom:none}
+.tr:hover{background:#F9FAFF}
+.tc{width:20px;height:20px;border-radius:50%;border:2px solid var(--bds);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .15s}
+.tc:hover{border-color:var(--accent)}
+.tc.done{background:var(--green);border-color:var(--green)}
+.tc.done i{font-size:11px;color:#fff}
+.tc.review{background:var(--amber-l);border-color:var(--amber)}
+.tc.locked{cursor:default;opacity:.55}
+.tc.locked:hover{border-color:var(--bds)}
+.ti-info{flex:1;min-width:0}
+.tt{font-size:13.5px;font-weight:600}
+.tt.done-text{text-decoration:line-through;color:var(--th);font-weight:400}
+.td-desc{font-size:12px;color:var(--ts);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm{display:flex;gap:10px;margin-top:5px;flex-wrap:wrap;align-items:center}
+.tmi{font-size:11.5px;color:var(--ts);display:flex;align-items:center;gap:3px}
+.tmi i{font-size:13px;color:var(--th)}
+.ta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.lkd-badge{font-size:10.5px;color:var(--th);display:flex;align-items:center;gap:3px}
+.lkd-badge i{font-size:12px;color:var(--red);opacity:.6}
+
+/* ── Dropdown ── */
+.sdrop{position:relative;display:inline-block}
+.sdrop-menu{display:none;position:absolute;top:110%;left:0;background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r-md);box-shadow:var(--sh-lg);min-width:155px;z-index:100;overflow:hidden}
+.sdrop.open .sdrop-menu{display:block}
+.sdi{display:flex;align-items:center;gap:7px;padding:9px 13px;font-size:13px;cursor:pointer;color:var(--tp);transition:background .12s;font-family:var(--font)}
+.sdi:hover{background:var(--bg-page)}
+.sdi.dis{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+/* ── Dept cards ── */
+.dept-card{background:var(--bg-card);border-radius:var(--r-lg);border:1px solid var(--bd);box-shadow:var(--sh-card);overflow:hidden}
+.dept-card-hd{padding:1.25rem 1.5rem;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--bd)}
+.dept-icon{width:44px;height:44px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:20px}
+.dept-icon.blue{background:var(--accent-l);color:var(--accent)}
+.dept-icon.teal{background:var(--teal-l);color:var(--teal)}
+.dept-icon.purple{background:var(--purple-l);color:var(--purple)}
+.dept-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--bd)}
+.dept-ms{background:var(--bg-card);padding:.85rem 1.25rem;text-align:center}
+.dept-ms .dsv{font-size:20px;font-weight:700}
+.dept-ms .dsl{font-size:11.5px;color:var(--ts);margin-top:2px}
+.dept-mbrs{padding:.75rem 1.5rem;border-top:1px solid var(--bd)}
+.dept-mbrs h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--th);margin-bottom:.75rem}
+.mbr-row{display:flex;align-items:center;gap:8px;padding:5px 0}
+.mbr-row .mn2{font-size:13px;font-weight:500;flex:1}
+.mbr-row .rt{font-size:10.5px;background:var(--bg-page);color:var(--ts);border-radius:99px;padding:2px 7px}
+
+/* ── User cards ── */
+.users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.1rem}
+.uc{background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r-lg);box-shadow:var(--sh-card);padding:1.25rem;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s,transform .15s}
+.uc:hover{box-shadow:0 4px 18px rgba(0,0,0,.09);transform:translateY(-1px)}
+.uc-top{display:flex;align-items:center;gap:10px}
+.uc-name{font-size:14px;font-weight:600}
+.uc-email{font-size:11.5px;color:var(--ts);margin-top:1px}
+.uc-tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:600;border-radius:99px;padding:2px 9px}
+.tag-mgr{background:var(--purple-l);color:var(--purple)}
+.tag-acc{background:var(--teal-l);color:var(--teal)}
+.tag-view{background:#F3F4F6;color:#6B7280}
+.tag-dept{background:var(--accent-l);color:var(--accent)}
+.uc-stats{display:flex;gap:8px}
+.ucs{flex:1;background:var(--bg-page);border-radius:var(--r-sm);padding:6px 8px;text-align:center}
+.ucs .sv{font-size:16px;font-weight:700}
+.ucs .sl{font-size:10.5px;color:var(--ts);margin-top:1px}
+.uc-acts{display:flex;gap:6px}
+
+/* ── Reports ── */
+.rr{display:flex;align-items:center;gap:14px;padding:14px 1.5rem;border-bottom:1px solid var(--bd)}
+.rr:last-child{border-bottom:none}
+.rd{width:140px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.rd i{font-size:16px;color:var(--ts)}
+.rpct{font-size:20px;font-weight:700;width:54px;text-align:left;flex-shrink:0}
+.rb{flex:1}
+.rsub{font-size:11.5px;color:var(--ts);margin-top:4px}
+
+/* ── Notifications ── */
+.nr{display:flex;gap:12px;align-items:flex-start;padding:13px 1.5rem;border-bottom:1px solid var(--bd);transition:background .12s}
+.nr:last-child{border-bottom:none}
+.nr:hover{background:#F9FAFF}
+.nr.unread{background:#F5F7FF}
+.nd{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.nd-blue{background:var(--accent)}.nd-green{background:var(--green)}.nd-amber{background:var(--amber)}.nd-red{background:var(--red)}
+.nt{font-size:13.5px;flex:1}
+.ntm{font-size:11.5px;color:var(--th);margin-top:2px}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.46);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg-card);border-radius:var(--r-xl);border:1px solid var(--bd);box-shadow:var(--sh-lg);width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:1.75rem}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.modal-hd h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.modal-hd h2 i{font-size:19px;color:var(--accent)}
+.mc{background:var(--bg-page);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ts);font-size:16px;transition:background .12s}
+.mc:hover{background:var(--bd)}
+.fg{margin-bottom:1rem}
+.fg label{display:block;font-size:11.5px;font-weight:700;color:var(--ts);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 12px;font-size:14px;font-family:var(--font);border:1.5px solid var(--bd);border-radius:var(--r-md);background:var(--bg-page);color:var(--tp);transition:border-color .15s,box-shadow .15s;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(61,111,240,.1);background:var(--bg-card)}
+.fg textarea{min-height:80px;resize:vertical}
+.fg .hint{font-size:11px;color:var(--th);margin-top:4px;font-weight:400;text-transform:none;letter-spacing:0}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--bd)}
+.info-alert{background:var(--accent-l);border:1px solid #C5D8FC;border-radius:var(--r-md);padding:10px 14px;font-size:13px;color:var(--accent-d);display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.info-alert i{font-size:16px;flex-shrink:0}
+.error-box{background:var(--red-l);color:var(--red);border-radius:var(--r-md);padding:8px 12px;font-size:12.5px;display:none;margin-bottom:.75rem}
+
+/* ── Confirm ── */
+.cnf-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.cnf-bg.open{display:flex}
+.cnf-box{background:var(--bg-card);border-radius:var(--r-xl);padding:2rem;width:390px;max-width:95vw;box-shadow:var(--sh-lg);text-align:center}
+.cnf-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 1rem}
+.cnf-icon.danger{background:var(--red-l);color:var(--red)}
+.cnf-icon.warn{background:var(--amber-l);color:var(--amber)}
+.cnf-icon.info{background:var(--accent-l);color:var(--accent)}
+.cnf-title{font-size:16px;font-weight:700;margin-bottom:.5rem}
+.cnf-msg{font-size:13.5px;color:var(--ts);margin-bottom:1.5rem;line-height:1.6}
+.cnf-btns{display:flex;gap:8px;justify-content:center}
+
+/* ── Toast ── */
+#tc{position:fixed;bottom:1.5rem;left:1.5rem;display:flex;flex-direction:column-reverse;gap:8px;z-index:999}
+.toast{background:var(--bg-sidebar);color:#fff;border-radius:var(--r-md);padding:10px 16px;font-size:13.5px;display:flex;align-items:center;gap:8px;box-shadow:var(--sh-lg);animation:slideUp .25s ease}
+.toast i{font-size:16px}
+.toast.success i{color:#4ADE80}.toast.warn i{color:#FBD54A}.toast.error i{color:#F87171}
+
+/* ── Empty ── */
+.empty{padding:3rem 1.5rem;text-align:center}
+.empty i{font-size:40px;color:var(--th);display:block;margin-bottom:.75rem}
+.empty p{color:var(--ts);font-size:14px}
+
+/* ── Login screen ── */
+.login-screen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:2rem}
+.login-box{width:100%;max-width:640px}
+.login-head{text-align:center;margin-bottom:2rem}
+.login-head .li{width:56px;height:56px;background:var(--accent);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;margin:0 auto 1rem}
+.login-head h1{font-size:20px;font-weight:700}
+.login-head p{font-size:13.5px;color:var(--ts);margin-top:4px}
+.login-sec{font-size:12px;font-weight:700;color:var(--th);text-transform:uppercase;letter-spacing:.06em;margin:1.4rem 0 .6rem}
+.login-mgr{display:flex;align-items:center;gap:14px;background:var(--bg-card);border:1.5px solid var(--accent);border-radius:var(--r-lg);padding:1rem 1.25rem;cursor:pointer;transition:all .15s;box-shadow:var(--sh-card)}
+.login-mgr:hover{box-shadow:var(--sh-lg);transform:translateY(-1px)}
+.login-mgr .lmi{width:44px;height:44px;background:var(--accent-l);color:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.login-mgr .lmt{font-size:14.5px;font-weight:700}
+.login-mgr .lms{font-size:12px;color:var(--ts);margin-top:1px}
+.login-mgr i.ti-arrow-left{margin-right:auto;color:var(--th);font-size:18px}
+.login-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.75rem}
+.login-uc{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r-lg);padding:.85rem 1rem;cursor:pointer;transition:all .15s;box-shadow:var(--sh-card)}
+.login-uc:hover{border-color:var(--accent);box-shadow:var(--sh-lg);transform:translateY(-1px)}
+.login-uc .lun{font-size:13.5px;font-weight:600}
+.login-uc .lud{font-size:11px;color:var(--ts);margin-top:1px}
+.login-foot{margin-top:1rem;font-size:12px;color:var(--th);text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.login-foot code{background:var(--bg-card);border:1px solid var(--bd);border-radius:4px;padding:1px 6px;font-family:monospace;color:var(--ts)}
+
+/* ── Personal greet card ── */
+.greet-card{background:var(--accent);border-radius:var(--r-lg);padding:1.4rem 1.6rem;color:#fff;margin-bottom:1.5rem;display:flex;align-items:center;gap:14px}
+.greet-card .gav{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.greet-card h2{font-size:17px;font-weight:700;color:#fff}
+.greet-card p{font-size:13px;color:rgba(255,255,255,.85);margin-top:3px}
+
+/* ── Reconciliation module ── */
+.upload-zone{border:2px dashed var(--bd);border-radius:var(--r-lg);padding:1.75rem;text-align:center;transition:border-color .15s}
+.upload-zone:hover{border-color:var(--accent)}
+.dtable{width:100%;border-collapse:collapse;font-size:13px}
+.dtable th{text-align:right;padding:10px 14px;font-size:11px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--bd);background:#F8F9FC;white-space:nowrap}
+.dtable td{padding:10px 14px;border-bottom:1px solid var(--bd);white-space:nowrap}
+.dtable tr:last-child td{border-bottom:none}
+.dtable tr:hover td{background:#F9FAFF}
+.recon-item{padding:1.25rem 1.5rem;border-bottom:1px solid var(--bd)}
+.recon-item:last-child{border-bottom:none}
+.recon-item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:.5rem}
+.diff-display{font-size:18px;font-weight:700;padding:8px 12px;background:var(--bg-page);border-radius:var(--r-md)}
+.lk-note{font-size:11.5px;color:var(--ts);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.lk-note i{font-size:13px;color:var(--th)}
+.mini-stat{flex:1;background:var(--bg-page);border-radius:var(--r-sm);padding:8px 10px}
+.mini-stat .ml{font-size:11px;color:var(--ts)}
+.mini-stat .mv{font-size:15px;font-weight:700;margin-top:2px}
+
+/* ── Loading ── */
+.loading-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:2rem;text-align:center}
+.loading-screen i{font-size:34px;color:var(--accent);animation:spin 1s linear infinite}
+.loading-screen p{font-size:13.5px;color:var(--ts)}
+.loading-screen .err{color:var(--red);font-size:13px;max-width:480px;line-height:1.7;background:var(--red-l);border-radius:var(--r-md);padding:1rem 1.25rem;display:none}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--bds);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- ══ LOADING SCREEN ══ -->
+<div class="loading-screen" id="loading-screen">
+  <i class="ti ti-loader-2" aria-hidden="true"></i>
+  <p>جارٍ تحميل البيانات من قاعدة البيانات...</p>
+  <div class="err" id="loading-error"></div>
+</div>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-head">
+      <div class="li"><i class="ti ti-chart-pie" aria-hidden="true"></i></div>
+      <h1>FinanceTrack</h1>
+      <p>اختر اسمك من القائمة ثم أدخل كلمة المرور للدخول</p>
+    </div>
+
+    <div class="login-sec">المدير المالي</div>
+    <div class="login-mgr" onclick="openLoginPwd('manager')">
+      <div class="lmi"><i class="ti ti-user-shield" aria-hidden="true"></i></div>
+      <div>
+        <div class="lmt" id="login-mgr-name">م. أحمد رضا</div>
+        <div class="lms">صلاحية كاملة — إدارة جميع الأقسام والمستخدمين والمهام</div>
+      </div>
+      <i class="ti ti-arrow-left" aria-hidden="true"></i>
+    </div>
+
+    <div class="login-sec">المحاسبون وموظفو الأقسام</div>
+    <div class="login-grid" id="login-users-grid"></div>
+
+    <div class="login-foot"><i class="ti ti-info-circle"></i>كل محاسب يرى مهامه الخاصة فقط بعد تسجيل الدخول</div>
+    <div class="login-foot"><i class="ti ti-key"></i>كلمات المرور الافتراضية: <code>123456</code> للموظفين و <code>admin123</code> للمدير المالي — يفضل تغييرها بعد أول دخول</div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div class="layout" id="app-layout" style="display:none">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="brand-row">
+      <div class="brand-icon"><i class="ti ti-chart-pie" aria-hidden="true"></i></div>
+      <div><div class="brand-name">FinanceTrack</div><div class="brand-sub">نظام المتابعة المالية</div></div>
+    </div>
+
+    <!-- Profile chip (manager or accountant) -->
+    <div class="mgr-chip" id="mgr-chip" title="">
+      <div class="mgr-av" id="prof-av">م.أ</div>
+      <div class="mgr-info">
+        <div class="mn" id="prof-name">م. أحمد رضا</div>
+        <div class="mr" id="prof-role">مدير مالي</div>
+      </div>
+      <i class="ti ti-pencil mgr-pencil" id="mgr-pencil" aria-hidden="true"></i>
+    </div>
+
+    <!-- Inline editor (manager only): name + password -->
+    <div class="mgr-edit" id="mgr-edit">
+      <input class="mgr-input" id="mgr-input" placeholder="اسمك"/>
+      <input class="mgr-input" id="mgr-pwd-input" type="password" placeholder="كلمة مرور جديدة (اختياري)" style="margin-top:5px"/>
+      <div class="mgr-btns">
+        <button class="mgr-btn save" onclick="saveMgrName()"><i class="ti ti-check" style="font-size:13px"></i>حفظ</button>
+        <button class="mgr-btn" onclick="cancelMgrEdit()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <!-- Manager-only nav -->
+    <div class="nav-sec nav-manager-only">الرئيسية</div>
+    <div class="nav-item nav-manager-only" data-page="dashboard" onclick="showPage('dashboard',this)"><i class="ti ti-layout-dashboard"></i>لوحة التحكم</div>
+    <div class="nav-item nav-manager-only" data-page="tasks" onclick="showPage('tasks',this)"><i class="ti ti-checklist"></i>المهام<span class="bdg" id="task-bdg">0</span></div>
+
+    <div class="nav-sec nav-manager-only">الإدارة</div>
+    <div class="nav-item nav-manager-only" data-page="departments" onclick="showPage('departments',this)"><i class="ti ti-building-community"></i>الأقسام</div>
+    <div class="nav-item nav-manager-only" data-page="users" onclick="showPage('users',this)"><i class="ti ti-users-group"></i>المستخدمون</div>
+    <div class="nav-item nav-manager-only" data-page="reconciliation" onclick="showPage('reconciliation',this)"><i class="ti ti-scale"></i>مطابقة الموردين<span class="bdg" id="recon-bdg">0</span></div>
+
+    <div class="nav-sec nav-manager-only">التحليل</div>
+    <div class="nav-item nav-manager-only" data-page="reports" onclick="showPage('reports',this)"><i class="ti ti-chart-bar"></i>التقارير</div>
+
+    <!-- Accountant-only nav -->
+    <div class="nav-sec nav-user-only">مهامي</div>
+    <div class="nav-item nav-user-only" data-page="mytasks" onclick="showPage('mytasks',this)"><i class="ti ti-checklist"></i>مهامي المسندة<span class="bdg" id="my-task-bdg">0</span></div>
+    <div class="nav-item nav-user-only nav-recon-only" data-page="myrecon" onclick="showPage('myrecon',this)" style="display:none"><i class="ti ti-scale"></i>مطابقات الموردين<span class="bdg" id="my-recon-bdg">0</span></div>
+
+    <!-- Shared -->
+    <div class="nav-sec">الإشعارات</div>
+    <div class="nav-item" data-page="notifs" onclick="showPage('notifs',this)"><i class="ti ti-bell"></i>الإشعارات<span class="bdg warn" id="notif-bdg">2</span></div>
+  </nav>
+
+  <div class="sb-foot">
+    <button class="btn btn-sm btn-ghost-light" style="width:100%" onclick="logout()"><i class="ti ti-logout"></i>تبديل الحساب</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">لوحة التحكم</div>
+    <div class="topbar-acts" id="topbar-acts-manager">
+      <button class="btn btn-sm" onclick="openAddTask()"><i class="ti ti-plus"></i>مهمة جديدة</button>
+      <button class="btn btn-sm btn-primary" onclick="openAddUser()"><i class="ti ti-user-plus"></i>إضافة محاسب</button>
+    </div>
+    <div class="topbar-acts" id="topbar-acts-user" style="display:none">
+      <span style="font-size:12.5px;color:var(--ts)"><i class="ti ti-lock" style="font-size:14px;vertical-align:-2px"></i> المهام المكتملة تُغلق وتحتاج موافقة المدير المالي</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD (manager) -->
+    <div class="page active" id="page-dashboard">
+      <div class="ph"><h1>لوحة التحكم</h1><p>نظرة شاملة على أداء الأقسام والمحاسبين</p></div>
+      <div class="stats-grid" id="db-stats"></div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><h2><i class="ti ti-building"></i>أداء الأقسام</h2></div>
+          <div id="dept-perf"></div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <h2><i class="ti ti-users"></i>أداء المحاسبين</h2>
+            <button class="btn btn-sm btn-primary" onclick="openAddTask()"><i class="ti ti-plus"></i>إسناد</button>
+          </div>
+          <div id="accts-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASKS (manager) -->
+    <div class="page" id="page-tasks">
+      <div class="ph"><h1>إدارة المهام</h1><p>متابعة وإسناد وتعديل المهام لجميع الأقسام</p></div>
+      <div class="info-alert"><i class="ti ti-shield-lock"></i>المهام المكتملة <strong>مقفلة</strong> — المدير المالي فقط يمكنه فتح قفلها أو تعديلها.</div>
+      <div class="card">
+        <div class="ch">
+          <h2><i class="ti ti-list-check"></i>قائمة المهام</h2>
+          <div style="display:flex;gap:8px">
+            <select id="sf" onchange="renderTasks()" class="btn btn-sm" style="font-family:var(--font)">
+              <option value="all">كل الحالات</option>
+              <option value="pending">معلقة</option>
+              <option value="review">تحت المراجعة</option>
+              <option value="done">مكتملة</option>
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="openAddTask()"><i class="ti ti-plus"></i>مهمة جديدة</button>
+          </div>
+        </div>
+        <div class="tab-bar" id="task-tabs">
+          <button class="tab active" onclick="ftasks('all',this)">الكل</button>
+          <button class="tab" onclick="ftasks('suppliers',this)"><i class="ti ti-truck" style="font-size:13px"></i>الموردون</button>
+          <button class="tab" onclick="ftasks('customers',this)"><i class="ti ti-users" style="font-size:13px"></i>العملاء</button>
+          <button class="tab" onclick="ftasks('current',this)"><i class="ti ti-credit-card" style="font-size:13px"></i>الحسابات الجارية</button>
+        </div>
+        <div id="tasks-list"></div>
+      </div>
+    </div>
+
+    <!-- DEPARTMENTS (manager) -->
+    <div class="page" id="page-departments">
+      <div class="ph"><h1>الأقسام</h1><p>متابعة تفصيلية لكل قسم</p></div>
+      <div class="g3" id="depts-grid"></div>
+    </div>
+
+    <!-- USERS (manager) -->
+    <div class="page" id="page-users">
+      <div class="ph"><h1>إدارة المستخدمين</h1><p>إضافة وتعديل وحذف المحاسبين وضبط صلاحياتهم وكلمات مرورهم</p></div>
+      <div class="users-grid" id="users-grid"></div>
+    </div>
+
+    <!-- REPORTS (manager) -->
+    <div class="page" id="page-reports">
+      <div class="ph"><h1>التقارير</h1><p>ملخص إنجاز الفريق لهذا الشهر</p></div>
+      <div class="g2">
+        <div class="card"><div class="ch"><h2><i class="ti ti-chart-pie"></i>نسب الإنجاز</h2></div><div id="rpt-depts"></div></div>
+        <div class="card"><div class="ch"><h2><i class="ti ti-trophy"></i>أفضل أداء</h2></div><div id="rpt-top"></div></div>
+      </div>
+      <div class="card"><div class="ch"><h2><i class="ti ti-circle-check"></i>المهام المكتملة</h2></div><div id="rpt-done"></div></div>
+    </div>
+
+    <!-- SUPPLIER RECONCILIATION (manager) -->
+    <div class="page" id="page-reconciliation">
+      <div class="ph"><h1>مطابقة الموردين</h1><p>رفع قائمة الموردين، واختيار عينة عشوائية لتكليف المحاسب بمطابقة الأرصدة</p></div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><h2><i class="ti ti-upload"></i>رفع ملف الموردين</h2></div>
+          <div style="padding:1.25rem 1.5rem">
+            <div class="upload-zone">
+              <i class="ti ti-file-spreadsheet" style="font-size:32px;color:var(--th)"></i>
+              <p style="font-size:13px;color:var(--ts);margin:.5rem 0">ملف Excel أو CSV يحتوي على أسماء الموردين (عمود واحد على الأقل)</p>
+              <input type="file" id="supplier-file" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleSupplierFile(this.files[0])"/>
+              <button class="btn btn-primary btn-sm" onclick="document.getElementById('supplier-file').click()"><i class="ti ti-upload"></i>اختيار ملف</button>
+            </div>
+            <div id="supplier-upload-status" style="font-size:12.5px;color:var(--ts);margin-top:.75rem"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2><i class="ti ti-dice"></i>اختيار عينة عشوائية للمطابقة</h2></div>
+          <div style="padding:1.25rem 1.5rem">
+            <div class="fr">
+              <div class="fg"><label>نسبة العينة %</label><input type="number" id="recon-pct" value="20" min="1" max="100" oninput="renderReconciliationPage()"/></div>
+              <div class="fg"><label>المحاسب المكلف</label><select id="recon-accountant"></select></div>
+            </div>
+            <div id="recon-sample-info" style="font-size:12.5px;color:var(--ts);margin-bottom:.9rem"></div>
+            <button class="btn btn-primary" onclick="assignRandomSample()" style="width:100%"><i class="ti ti-send"></i>اختيار العينة وتكليف المحاسب</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><h2><i class="ti ti-list"></i>قائمة الموردين وحالة المطابقة</h2></div>
+        <div style="overflow-x:auto"><table class="dtable" id="suppliers-table"></table></div>
+      </div>
+    </div>
+
+    <!-- MY RECONCILIATIONS (suppliers-dept accountant) -->
+    <div class="page" id="page-myrecon">
+      <div class="ph"><h1>مطابقات الموردين</h1><p>سجّل رصيد المورد بدفاتر الشركة ودفاتره الخاصة، واذكر سبب الفرق والإجراء المتخذ</p></div>
+      <div class="stats-grid" id="recon-stats"></div>
+      <div class="card">
+        <div class="ch"><h2><i class="ti ti-clock-hour-4"></i>مطابقات قيد التنفيذ</h2></div>
+        <div id="recon-pending-list"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><h2><i class="ti ti-circle-check"></i>مطابقات مكتملة</h2></div>
+        <div id="recon-done-list"></div>
+      </div>
+    </div>
+
+    <!-- MY TASKS (accountant) -->
+    <div class="page" id="page-mytasks">
+      <div class="greet-card">
+        <div class="gav" id="my-greet-av">؟</div>
+        <div>
+          <h2>أهلاً، <span id="my-greet-name">—</span></h2>
+          <p>قسم <span id="my-greet-dept">—</span> · هذه المهام المسندة إليك من المدير المالي</p>
+        </div>
+      </div>
+      <div class="stats-grid" id="my-stats"></div>
+      <div class="card">
+        <div class="ch"><h2><i class="ti ti-list-check"></i>قائمة مهامي</h2></div>
+        <div id="my-tasks-list"></div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS (shared) -->
+    <div class="page" id="page-notifs">
+      <div class="ph"><h1>الإشعارات</h1><p>تنبيهات المهام والنشاط الأخير</p></div>
+      <div class="card"><div id="notif-list"></div></div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /app-layout -->
+
+<!-- TOAST -->
+<div id="tc"></div>
+
+<!-- ══ MODAL: LOGIN PASSWORD ══ -->
+<div class="modal-bg" id="password-modal">
+  <div class="modal" style="width:380px">
+    <div class="modal-hd">
+      <h2><i class="ti ti-lock"></i>تسجيل الدخول</h2>
+      <button class="mc" onclick="closeModal('password-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="text-align:center;margin-bottom:1.25rem">
+      <div class="av blue" id="pwd-av" style="width:56px;height:56px;font-size:18px;margin:0 auto 10px"></div>
+      <div style="font-weight:700;font-size:15px" id="pwd-name"></div>
+      <div style="font-size:12px;color:var(--ts)" id="pwd-role"></div>
+    </div>
+    <div class="error-box" id="pwd-error">كلمة المرور غير صحيحة، حاول مرة أخرى</div>
+    <div class="fg">
+      <label>كلمة المرور</label>
+      <input type="password" id="pwd-input" placeholder="••••••••"/>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('password-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="attemptLogin()"><i class="ti ti-login"></i>دخول</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: CHANGE MY PASSWORD (accountant) ══ -->
+<div class="modal-bg" id="change-pwd-modal">
+  <div class="modal" style="width:380px">
+    <div class="modal-hd">
+      <h2><i class="ti ti-key"></i>تغيير كلمة المرور</h2>
+      <button class="mc" onclick="closeModal('change-pwd-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="error-box" id="cp-error">كلمة المرور الحالية غير صحيحة</div>
+    <div class="fg"><label>كلمة المرور الحالية</label><input type="password" id="cp-old"/></div>
+    <div class="fg"><label>كلمة المرور الجديدة</label><input type="password" id="cp-new"/></div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('change-pwd-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="changeMyPassword()"><i class="ti ti-check"></i>حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: TASK ══ -->
+<div class="modal-bg" id="task-modal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h2><i class="ti ti-checkbox"></i><span id="tm-title">إسناد مهمة جديدة</span></h2>
+      <button class="mc" onclick="closeModal('task-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <input type="hidden" id="t-id"/>
+    <div class="fg"><label>عنوان المهمة</label><input id="t-title" placeholder="مثال: مراجعة فواتير الموردين – يوليو"/></div>
+    <div class="fg"><label>تفاصيل المهمة</label><textarea id="t-desc" placeholder="وصف تفصيلي للمهمة..."></textarea></div>
+    <div class="fr">
+      <div class="fg"><label>القسم</label>
+        <select id="t-dept" onchange="updateTUsers()">
+          <option value="suppliers">قسم الموردين</option>
+          <option value="customers">قسم العملاء</option>
+          <option value="current">الحسابات الجارية</option>
+        </select>
+      </div>
+      <div class="fg"><label>المحاسب المكلف</label><select id="t-user"></select></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>الأولوية</label>
+        <select id="t-prio">
+          <option value="high">🔴 عالية</option>
+          <option value="med" selected>🟡 متوسطة</option>
+          <option value="low">🟢 منخفضة</option>
+        </select>
+      </div>
+      <div class="fg"><label>تاريخ الاستحقاق</label><input type="date" id="t-due"/></div>
+    </div>
+    <div class="fg">
+      <label>تكرار المهمة</label>
+      <select id="t-recurring">
+        <option value="none">بدون تكرار (مرة واحدة)</option>
+        <option value="monthly">🔁 شهرياً — تتكرر كل شهر</option>
+        <option value="weekly">🔁 أسبوعياً — تتكرر كل أسبوع</option>
+      </select>
+      <div class="hint">عند اعتماد المهمة كـ"مكتملة"، يُنشئ النظام تلقائياً نسخة جديدة بنفس التفاصيل لموعدها القادم</div>
+    </div>
+    <div class="fg" id="t-status-grp" style="display:none">
+      <label>الحالة <span style="font-size:10px;color:var(--accent);font-weight:400">(صلاحية المدير فقط)</span></label>
+      <select id="t-status">
+        <option value="pending">معلقة</option>
+        <option value="review">تحت المراجعة</option>
+        <option value="done">مكتملة</option>
+      </select>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('task-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveTask()"><i class="ti ti-check"></i><span id="ts-lbl">إسناد المهمة</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: USER ══ -->
+<div class="modal-bg" id="user-modal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h2><i class="ti ti-user-edit"></i><span id="um-title">إضافة محاسب جديد</span></h2>
+      <button class="mc" onclick="closeModal('user-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <input type="hidden" id="u-id"/>
+    <div class="fr">
+      <div class="fg"><label>الاسم الكامل</label><input id="u-name" placeholder="الاسم الثلاثي"/></div>
+      <div class="fg"><label>البريد الإلكتروني</label><input id="u-email" placeholder="user@company.com"/></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>القسم</label>
+        <select id="u-dept">
+          <option value="suppliers">قسم الموردين</option>
+          <option value="customers">قسم العملاء</option>
+          <option value="current">الحسابات الجارية</option>
+        </select>
+      </div>
+      <div class="fg"><label>الصلاحية</label>
+        <select id="u-role">
+          <option value="accountant">محاسب</option>
+          <option value="manager">مشرف قسم</option>
+          <option value="viewer">عرض فقط</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <label>كلمة المرور</label>
+      <input type="text" id="u-pwd" placeholder="كلمة المرور لتسجيل الدخول"/>
+      <div class="hint" id="u-pwd-hint">يستخدمها هذا المستخدم لتسجيل الدخول إلى النظام</div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('user-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveUser()"><i class="ti ti-check"></i><span id="us-lbl">إضافة المستخدم</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DIALOG ══ -->
+<div class="cnf-bg" id="cnf-bg">
+  <div class="cnf-box">
+    <div class="cnf-icon danger" id="cnf-icon"><i class="ti ti-trash" id="cnf-icon-i"></i></div>
+    <div class="cnf-title" id="cnf-title">تأكيد</div>
+    <div class="cnf-msg" id="cnf-msg">هل أنت متأكد؟</div>
+    <div class="cnf-btns">
+      <button class="btn" onclick="closeConfirm()">إلغاء</button>
+      <button class="btn btn-danger" id="cnf-ok" onclick="doConfirm()"><i class="ti ti-check"></i>تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FIREBASE (compat SDK) ══ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" onerror="window.__fbErr='تعذر تحميل مكتبة firebase-app من الإنترنت (تأكد من الاتصال بالإنترنت ومن عدم حجب gstatic.com)'"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" onerror="window.__fbErr='تعذر تحميل مكتبة firebase-firestore من الإنترنت (تأكد من الاتصال بالإنترنت ومن عدم حجب gstatic.com)'"></script>
+
+<!-- ══ XLSX (for reading supplier files) ══ -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="window.__xlsxErr=true"></script>
+
+<script>
+/* ══ EARLY ERROR HANDLING ══ */
+function showBootError(msg){
+  const loading=document.getElementById('loading-screen');
+  const errBox=document.getElementById('loading-error');
+  if(!loading||!errBox)return;
+  const icon=loading.querySelector('i');
+  if(icon)icon.style.display='none';
+  errBox.style.display='block';
+  errBox.innerHTML=msg;
+}
+window.addEventListener('error',function(e){
+  if(document.getElementById('loading-screen').style.display!=='none'){
+    showBootError('حدث خطأ غير متوقع أثناء تحميل النظام:<br><span style="font-size:11px;opacity:.8">'+(e.message||e)+'</span>');
+  }
+});
+
+/* ══ FIREBASE INIT ══ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBg3RQual1bQhBf1Lwl2LcfUvt5vZDScuE",
+  authDomain: "financial-tasks-6ab22.firebaseapp.com",
+  projectId: "financial-tasks-6ab22",
+  storageBucket: "financial-tasks-6ab22.firebasestorage.app",
+  messagingSenderId: "958609915400",
+  appId: "1:958609915400:web:4b10d5e69b25bced85dbbd",
+};
+
+let db,USERS_COL,TASKS_COL,SETTINGS_DOC,SUPPLIERS_COL,RECON_COL;
+
+if(window.__fbErr){
+  showBootError(window.__fbErr);
+}else if(typeof firebase==='undefined'){
+  showBootError('تعذر تحميل مكتبة Firebase. تأكد من وجود اتصال بالإنترنت وأن الموقع gstatic.com غير محجوب، ثم أعد تحميل الصفحة.');
+}else{
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+    USERS_COL=db.collection('users');
+    TASKS_COL=db.collection('tasks');
+    SUPPLIERS_COL=db.collection('suppliers');
+    RECON_COL=db.collection('reconciliations');
+    SETTINGS_DOC=db.collection('settings').doc('manager');
+  }catch(err){
+    showBootError('فشل الاتصال بـ Firebase:<br><span style="font-size:11px;opacity:.8">'+err.message+'</span>');
+  }
+}
+
+/* ══ CONSTANTS ══ */
+const DL={suppliers:'الموردون',customers:'العملاء',current:'الحسابات الجارية'};
+const DI={suppliers:'ti-truck',customers:'ti-users',current:'ti-credit-card'};
+const DC={suppliers:'blue',customers:'teal',current:'purple'};
+const AVC=['blue','teal','purple','coral','green'];
+const SL={done:'مكتملة',review:'تحت المراجعة',pending:'معلقة'};
+const SP={done:'pill-done',review:'pill-review',pending:'pill-pending'};
+const SI={done:'ti-circle-check',review:'ti-clock-hour-4',pending:'ti-circle-dot'};
+const PL={high:'عالية',med:'متوسطة',low:'منخفضة'};
+const PC={high:'ph-h',med:'ph-m',low:'ph-l'};
+const RL={manager:'مشرف قسم',accountant:'محاسب',viewer:'عرض فقط'};
+const RC={manager:'tag-mgr',accountant:'tag-acc',viewer:'tag-view'};
+
+/* ══ STATE (synced from Firestore) ══ */
+let mgrName='م. أحمد رضا';
+let mgrPassword='admin123';
+let users=[];
+let tasks=[];
+let suppliers=[];
+let reconciliations=[];
+let deptFilter='all',pendingConfirm=null;
+let currentUser=null;   /* {type:'manager'} | {type:'user',id:STRING} */
+let pendingLogin=null;  /* {type, id} awaiting password */
+
+/* ── Helpers ── */
+function ini(n){const p=(n||'').trim().split(' ');return p.length>=2?p[0][0]+'.'+p[1][0]:(p[0]||'؟').slice(0,2)}
+function avc(id){let h=0;const s=String(id);for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return AVC[Math.abs(h)%AVC.length]}
+function uById(id){return users.find(u=>u.id===id)}
+function tById(id){return tasks.find(t=>t.id===id)}
+function empty(msg='لا توجد بيانات'){return`<div class="empty"><i class="ti ti-mood-empty"></i><p>${msg}</p></div>`}
+
+/* ══════════════ FIRESTORE: SEED + LOAD ══════════════ */
+async function seedIfNeeded(){
+  const mgrDoc=await SETTINGS_DOC.get();
+  if(!mgrDoc.exists){
+    await SETTINGS_DOC.set({name:'م. أحمد رضا',password:'admin123'});
+  }
+  const usersSnap=await USERS_COL.get();
+  if(usersSnap.empty){
+    const defUsers={
+      u1:{name:'علي محمود',email:'ali@co.com',dept:'suppliers',role:'manager',password:'123456'},
+      u2:{name:'سارة خالد',email:'sara@co.com',dept:'suppliers',role:'accountant',password:'123456'},
+      u3:{name:'منى أحمد',email:'mona@co.com',dept:'customers',role:'manager',password:'123456'},
+      u4:{name:'كريم يوسف',email:'karim@co.com',dept:'customers',role:'accountant',password:'123456'},
+      u5:{name:'خالد سامي',email:'khaled@co.com',dept:'current',role:'manager',password:'123456'},
+      u6:{name:'نورا حسن',email:'nora@co.com',dept:'current',role:'accountant',password:'123456'},
+    };
+    for(const id in defUsers) await USERS_COL.doc(id).set(defUsers[id]);
+  }
+  const tasksSnap=await TASKS_COL.get();
+  if(tasksSnap.empty){
+    const defTasks={
+      t1:{title:'مراجعة فواتير الموردين – يناير',desc:'مراجعة وتدقيق جميع فواتير الموردين لشهر يناير',dept:'suppliers',userId:'u2',status:'done',prio:'high',due:'2026-06-10',recurring:'monthly'},
+      t2:{title:'تسوية حسابات الموردين المعلقة',desc:'تسوية الأرصدة المعلقة مع الموردين الرئيسيين',dept:'suppliers',userId:'u1',status:'review',prio:'med',due:'2026-06-15',recurring:'none'},
+      t3:{title:'متابعة مديونيات العملاء',desc:'إعداد كشف بمديونيات العملاء المتأخرة فوق 60 يوم',dept:'customers',userId:'u4',status:'pending',prio:'high',due:'2026-06-14',recurring:'none'},
+      t4:{title:'تحصيل الشيكات المستحقة',desc:'متابعة تحصيل الشيكات المستحقة خلال الشهر الحالي',dept:'customers',userId:'u3',status:'review',prio:'high',due:'2026-06-12',recurring:'none'},
+      t5:{title:'تسوية الحساب الجاري – البنك الأهلي',desc:'تسوية شهرية لكشف حساب البنك الأهلي',dept:'current',userId:'u6',status:'pending',prio:'med',due:'2026-06-20',recurring:'monthly'},
+      t6:{title:'تقرير التدفقات النقدية الأسبوعي',desc:'إعداد تقرير أسبوعي لحركة الأموال الواردة والصادرة',dept:'current',userId:'u5',status:'done',prio:'low',due:'2026-06-08',recurring:'weekly'},
+      t7:{title:'مراجعة عقود الموردين الجديدة',desc:'دراسة وتوثيق عقود الموردين المضافة هذا الربع',dept:'suppliers',userId:'u2',status:'pending',prio:'low',due:'2026-06-25',recurring:'none'},
+    };
+    for(const id in defTasks) await TASKS_COL.doc(id).set(defTasks[id]);
+  }
+  const suppliersSnap=await SUPPLIERS_COL.get();
+  if(suppliersSnap.empty){
+    const defSuppliers={
+      sup1:{name:'شركة النور للتوريدات'},
+      sup2:{name:'مؤسسة الأمل التجارية'},
+      sup3:{name:'شركة الفجر للمواد الخام'},
+      sup4:{name:'مصنع الاتحاد للصناعات'},
+      sup5:{name:'شركة الوفاء للنقل والتوزيع'},
+    };
+    for(const id in defSuppliers) await SUPPLIERS_COL.doc(id).set(defSuppliers[id]);
+  }
+  const reconSnap=await RECON_COL.get();
+  if(reconSnap.empty){
+    await RECON_COL.doc('r1').set({
+      supplierId:'sup1',supplierName:'شركة النور للتوريدات',accountantId:'u2',
+      companyBalance:45000,supplierBalance:42500,difference:2500,
+      reasonDiff:'فاتورة شراء بقيمة 2500 ج.م لم تُسجل في دفاتر المورد حتى تاريخه',
+      actionsTaken:'تم إرسال صورة الفاتورة والإشعار للمورد لتسجيلها، وتم إخطار قسم الحسابات الجارية بالمتابعة',
+      status:'done',assignedAt:'2026-05-01',completedAt:'2026-05-12'
+    });
+  }
+}
+
+function showLoadError(err){
+  const box=document.getElementById('loading-error');
+  box.style.display='block';
+  box.innerHTML=`<i class="ti ti-alert-triangle" style="font-size:16px;vertical-align:-3px"></i>
+    تعذّر الاتصال بقاعدة البيانات.<br>
+    تأكد من ضبط قواعد الأمان (Firestore Rules) للسماح بالقراءة والكتابة لهذا المشروع.<br>
+    <span style="font-size:11px;opacity:.8">${(err&&err.message)||err}</span>`;
+  document.querySelector('.loading-screen i').style.display='none';
+}
+
+async function init(){
+  try{
+    await seedIfNeeded();
+    const mgrDoc=await SETTINGS_DOC.get();
+    if(mgrDoc.exists){const d=mgrDoc.data();mgrName=d.name||mgrName;mgrPassword=d.password||mgrPassword;}
+    const usersSnap=await USERS_COL.get();
+    users=usersSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const tasksSnap=await TASKS_COL.get();
+    tasks=tasksSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const suppliersSnap=await SUPPLIERS_COL.get();
+    suppliers=suppliersSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const reconSnap=await RECON_COL.get();
+    reconciliations=reconSnap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(err){
+    showLoadError(err);
+    return;
+  }
+
+  document.getElementById('loading-screen').style.display='none';
+
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem('ft_session')||'null');}catch(e){}
+  if(saved && (saved.type==='manager' || (saved.type==='user' && uById(saved.id)))){
+    currentUser=saved;
+    showApp();
+  }else{
+    document.getElementById('login-screen').style.display='flex';
+    initLogin();
+  }
+
+  /* Real-time listeners */
+  USERS_COL.onSnapshot(snap=>{
+    users=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  });
+  TASKS_COL.onSnapshot(snap=>{
+    tasks=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  });
+  SUPPLIERS_COL.onSnapshot(snap=>{
+    suppliers=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  });
+  RECON_COL.onSnapshot(snap=>{
+    reconciliations=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  });
+  SETTINGS_DOC.onSnapshot(snap=>{
+    if(snap.exists){
+      const d=snap.data();
+      mgrName=d.name||mgrName;
+      mgrPassword=d.password||mgrPassword;
+      renderAll();
+    }
+  });
+}
+
+function renderAll(){
+  initLogin();
+  if(!currentUser)return;
+  if(currentUser.type==='manager'){
+    if(document.getElementById('prof-name')){
+      document.getElementById('prof-name').textContent=mgrName;
+      document.getElementById('prof-av').textContent=ini(mgrName);
+    }
+    renderDashboard();renderTasks();renderDepts();renderUsers();renderReports();renderReconciliationPage();
+  }else{
+    renderMyTasks();
+    const u=uById(currentUser.id);
+    if(u&&u.dept==='suppliers')renderMyRecon();
+  }
+  renderNotifs();
+}
+
+/* ══════════════ LOGIN / SESSION ══════════════ */
+function initLogin(){
+  document.getElementById('login-mgr-name').textContent=mgrName;
+  document.getElementById('login-users-grid').innerHTML=users.map(u=>`
+    <div class="login-uc" onclick="openLoginPwd('user','${u.id}')">
+      <div class="av ${avc(u.id)}">${ini(u.name)}</div>
+      <div><div class="lun">${u.name}</div><div class="lud">${DL[u.dept]} · ${RL[u.role]}</div></div>
+    </div>`).join('');
+}
+
+function openLoginPwd(type,id){
+  pendingLogin={type,id};
+  document.getElementById('pwd-input').value='';
+  document.getElementById('pwd-error').style.display='none';
+  if(type==='manager'){
+    document.getElementById('pwd-name').textContent=mgrName;
+    document.getElementById('pwd-role').textContent='مدير مالي';
+    document.getElementById('pwd-av').textContent=ini(mgrName);
+    document.getElementById('pwd-av').className='av blue';
+  }else{
+    const u=uById(id);if(!u)return;
+    document.getElementById('pwd-name').textContent=u.name;
+    document.getElementById('pwd-role').textContent=DL[u.dept]+' · '+RL[u.role];
+    document.getElementById('pwd-av').textContent=ini(u.name);
+    document.getElementById('pwd-av').className='av '+avc(u.id);
+  }
+  openModal('password-modal');
+  setTimeout(()=>document.getElementById('pwd-input').focus(),120);
+}
+
+function attemptLogin(){
+  const pwd=document.getElementById('pwd-input').value;
+  let ok=false,target=null;
+  if(pendingLogin.type==='manager'){
+    ok=pwd===mgrPassword;
+    target={type:'manager'};
+  }else{
+    const u=uById(pendingLogin.id);
+    ok=!!u && pwd===u.password;
+    target={type:'user',id:pendingLogin.id};
+  }
+  if(!ok){
+    document.getElementById('pwd-error').style.display='block';
+    return;
+  }
+  document.getElementById('pwd-error').style.display='none';
+  closeModal('password-modal');
+  currentUser=target;
+  try{localStorage.setItem('ft_session',JSON.stringify(currentUser));}catch(e){}
+  showApp();
+}
+document.getElementById('pwd-input').addEventListener('keydown',e=>{if(e.key==='Enter')attemptLogin();});
+
+function logout(){
+  currentUser=null;
+  try{localStorage.removeItem('ft_session');}catch(e){}
+  document.getElementById('app-layout').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  initLogin();
+}
+
+function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-layout').style.display='flex';
+  applyRole();
+}
+
+function applyRole(){
+  const isMgr=currentUser.type==='manager';
+  document.querySelectorAll('.nav-manager-only').forEach(el=>el.style.display=isMgr?'':'none');
+  document.querySelectorAll('.nav-user-only').forEach(el=>el.style.display=isMgr?'none':'');
+  document.getElementById('topbar-acts-manager').style.display=isMgr?'flex':'none';
+  document.getElementById('topbar-acts-user').style.display=isMgr?'none':'flex';
+
+  const chip=document.getElementById('mgr-chip');
+  if(isMgr){
+    document.getElementById('prof-name').textContent=mgrName;
+    document.getElementById('prof-role').textContent='مدير مالي';
+    document.getElementById('prof-av').textContent=ini(mgrName);
+    chip.onclick=toggleMgrEdit;
+    chip.title='اضغط لتعديل اسمك أو كلمة مرورك';
+    showPage('dashboard',document.querySelector('.nav-item[data-page="dashboard"]'));
+  }else{
+    const u=uById(currentUser.id);
+    if(!u){logout();return;}
+    document.getElementById('prof-name').textContent=u.name;
+    document.getElementById('prof-role').textContent=DL[u.dept]+' · '+RL[u.role];
+    document.getElementById('prof-av').textContent=ini(u.name);
+    chip.onclick=openChangePwd;
+    chip.title='اضغط لتغيير كلمة المرور';
+    cancelMgrEdit();
+    document.querySelectorAll('.nav-recon-only').forEach(el=>el.style.display=(u.dept==='suppliers')?'':'none');
+    showPage('mytasks',document.querySelector('.nav-item[data-page="mytasks"]'));
+  }
+}
+
+/* ══════════════ MANAGER NAME / PASSWORD ══════════════ */
+function toggleMgrEdit(){
+  if(currentUser.type!=='manager')return;
+  const ed=document.getElementById('mgr-edit');
+  const chip=document.getElementById('mgr-chip');
+  if(ed.style.display==='block'){cancelMgrEdit();return;}
+  ed.style.display='block';
+  chip.style.pointerEvents='none';
+  document.getElementById('mgr-input').value=mgrName;
+  document.getElementById('mgr-pwd-input').value='';
+  document.getElementById('mgr-input').focus();
+}
+async function saveMgrName(){
+  const v=document.getElementById('mgr-input').value.trim();
+  if(!v){toast('أدخل اسمك أولاً','warn');return;}
+  const newPwd=document.getElementById('mgr-pwd-input').value.trim();
+  const data={name:v};
+  if(newPwd)data.password=newPwd;
+  try{
+    await SETTINGS_DOC.set(data,{merge:true});
+    cancelMgrEdit();
+    toast('تم تحديث البيانات بنجاح','success');
+  }catch(err){toast('فشل الحفظ: '+err.message,'error');}
+}
+function cancelMgrEdit(){
+  const ed=document.getElementById('mgr-edit');
+  if(ed)ed.style.display='none';
+  const chip=document.getElementById('mgr-chip');
+  if(chip)chip.style.pointerEvents='auto';
+}
+document.getElementById('mgr-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter')saveMgrName();
+  if(e.key==='Escape')cancelMgrEdit();
+});
+
+/* ══════════════ CHANGE MY PASSWORD (accountant) ══════════════ */
+function openChangePwd(){
+  document.getElementById('cp-old').value='';
+  document.getElementById('cp-new').value='';
+  document.getElementById('cp-error').style.display='none';
+  openModal('change-pwd-modal');
+}
+async function changeMyPassword(){
+  const u=uById(currentUser.id);if(!u)return;
+  const oldPwd=document.getElementById('cp-old').value;
+  const newPwd=document.getElementById('cp-new').value.trim();
+  if(oldPwd!==u.password){
+    document.getElementById('cp-error').style.display='block';
+    return;
+  }
+  if(!newPwd){toast('أدخل كلمة المرور الجديدة','warn');return;}
+  try{
+    await USERS_COL.doc(u.id).update({password:newPwd});
+    closeModal('change-pwd-modal');
+    toast('تم تغيير كلمة المرور بنجاح','success');
+  }catch(err){toast('فشل الحفظ: '+err.message,'error');}
+}
+
+/* ══════════════ NAVIGATION ══════════════ */
+const PAGE_TITLES={dashboard:'لوحة التحكم',tasks:'إدارة المهام',departments:'الأقسام',users:'المستخدمون',reports:'التقارير',notifs:'الإشعارات',mytasks:'مهامي المسندة',reconciliation:'مطابقة الموردين',myrecon:'مطابقات الموردين'};
+function showPage(p,el){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('topbar-title').textContent=PAGE_TITLES[p]||'';
+  closeDropdowns();
+  if(p==='dashboard')renderDashboard();
+  else if(p==='tasks')renderTasks();
+  else if(p==='departments')renderDepts();
+  else if(p==='users')renderUsers();
+  else if(p==='reports')renderReports();
+  else if(p==='notifs')renderNotifs();
+  else if(p==='mytasks')renderMyTasks();
+  else if(p==='reconciliation')renderReconciliationPage();
+  else if(p==='myrecon')renderMyRecon();
+}
+
+/* ══════════════ DASHBOARD (manager) ══════════════ */
+function renderDashboard(){
+  const total=tasks.length,done=tasks.filter(t=>t.status==='done').length,
+        rev=tasks.filter(t=>t.status==='review').length,
+        pend=tasks.filter(t=>t.status==='pending').length;
+  document.getElementById('db-stats').innerHTML=[
+    {l:'إجمالي المهام',v:total,i:'ti-list-check',c:'blue'},
+    {l:'مكتملة',v:done,i:'ti-circle-check',c:'green'},
+    {l:'تحت المراجعة',v:rev,i:'ti-clock-hour-4',c:'amber'},
+    {l:'معلقة',v:pend,i:'ti-alert-circle',c:'red'},
+  ].map(s=>`<div class="sc ${s.c}"><div class="sc-icon ${s.c}"><i class="ti ${s.i}"></i></div><div class="sc-val ${s.c}">${s.v}</div><div class="sc-lbl">${s.l}</div></div>`).join('');
+
+  let dp='';
+  ['suppliers','customers','current'].forEach(d=>{
+    const dt=tasks.filter(t=>t.dept===d),dd=dt.filter(t=>t.status==='done').length;
+    const pct=dt.length?Math.round(dd/dt.length*100):0;
+    const col=pct>=70?'green':pct>=40?'amber':'red';
+    const colV=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+    dp+=`<div class="dpr"><div class="dn"><i class="ti ${DI[d]}"></i>${DL[d]}</div>
+      <div class="pb"><div class="pf ${col}" style="width:${pct}%"></div></div>
+      <div class="dpct" style="color:${colV}">${pct}%</div>
+      <div class="dcnt">${dd}/${dt.length}</div></div>`;
+  });
+  document.getElementById('dept-perf').innerHTML=dp||empty();
+
+  let al='';
+  users.forEach(u=>{
+    const ut=tasks.filter(t=>t.userId===u.id),
+          ud=ut.filter(t=>t.status==='done').length,
+          pct=ut.length?Math.round(ud/ut.length*100):0,
+          p=ut.filter(t=>t.status==='pending').length;
+    al+=`<div class="ur">
+      <div class="av ${avc(u.id)}">${ini(u.name)}</div>
+      <div class="ui">
+        <div class="un">${u.name}</div>
+        <div class="uro">${DL[u.dept]} · ${RL[u.role]}</div>
+        <div class="uprog"><div class="pb"><div class="pf" style="width:${pct}%"></div></div><div class="upct">${pct}%</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        ${p?`<span class="pill pill-pending">${p} معلق</span>`:'<span class="pill pill-done"><i class="ti ti-check"></i>منجز</span>'}
+        <button class="btn btn-sm" onclick="openAssign('${u.id}')"><i class="ti ti-plus"></i></button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('accts-list').innerHTML=al||empty('لا يوجد محاسبون');
+  document.getElementById('task-bdg').textContent=pend;
+}
+
+/* ══════════════ TASKS (manager) ══════════════ */
+function renderTasks(){
+  const sf=document.getElementById('sf')?.value||'all';
+  let list=tasks.filter(t=>(deptFilter==='all'||t.dept===deptFilter)&&(sf==='all'||t.status===sf));
+  if(!list.length){document.getElementById('tasks-list').innerHTML=empty('لا توجد مهام في هذا التصنيف');return;}
+  let h='';
+  list.forEach(t=>{
+    const u=uById(t.userId);
+    const locked=t.status==='done';
+    h+=`<div class="tr">
+      <div class="tc ${t.status==='done'?'done':t.status==='review'?'review':''} ${locked?'locked':''}"
+           onclick="${locked?'lockedMsg()':"cycleStatus('"+t.id+"')"}"
+           title="${locked?'مقفلة — المدير فقط':'تغيير الحالة'}">
+        ${t.status==='done'?'<i class="ti ti-check"></i>':t.status==='review'?'<i class="ti ti-dots" style="font-size:10px;color:var(--amber)"></i>':''}
+      </div>
+      <div class="ti-info">
+        <div class="tt ${t.status==='done'?'done-text':''}">${t.title}</div>
+        <div class="td-desc">${t.desc||'—'}</div>
+        <div class="tm">
+          <span class="tmi"><i class="ti ti-user"></i>${u?u.name:'غير معين'}</span>
+          <span class="tmi"><i class="ti ${DI[t.dept]}"></i>${DL[t.dept]}</span>
+          <span class="tmi"><i class="ti ti-calendar"></i>${t.due}</span>
+          ${t.recurring&&t.recurring!=='none'?`<span class="tmi" style="color:var(--accent)"><i class="ti ti-repeat" style="color:var(--accent)"></i>${t.recurring==='monthly'?'شهرية':'أسبوعية'}</span>`:''}
+        </div>
+      </div>
+      <div class="ta">
+        ${locked
+          ?`<span class="lkd-badge"><i class="ti ti-lock"></i>مكتملة ومقفلة</span>
+            <div style="display:flex;gap:4px;margin-top:3px">
+              <button class="btn btn-sm btn-warning" onclick="mgrUnlock('${t.id}')"><i class="ti ti-lock-open"></i>فتح القفل</button>
+              <button class="btn btn-sm btn-icon" onclick="openEditTask('${t.id}')" title="تعديل بيانات المهمة"><i class="ti ti-pencil"></i></button>
+              <button class="btn btn-sm btn-icon btn-danger" onclick="askDelTask('${t.id}')" title="حذف"><i class="ti ti-trash"></i></button>
+            </div>`
+          :`<div class="sdrop" id="sd-${t.id}">
+              <span class="pill ${SP[t.status]}" style="cursor:pointer" onclick="togDrop('${t.id}')">
+                <i class="ti ${SI[t.status]}"></i>${SL[t.status]}
+              </span>
+              <div class="sdrop-menu">
+                <div class="sdi" onclick="setStatus('${t.id}','pending')"><i class="ti ti-circle-dot" style="color:var(--th)"></i>معلقة</div>
+                <div class="sdi" onclick="setStatus('${t.id}','review')"><i class="ti ti-clock-hour-4" style="color:var(--amber)"></i>تحت المراجعة</div>
+                <div class="sdi dis"><i class="ti ti-lock" style="color:var(--th)"></i>مكتملة (المدير فقط)</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:4px;margin-top:3px">
+              <span class="prio-b ${PC[t.prio]}">${PL[t.prio]}</span>
+              <button class="btn btn-sm btn-icon" onclick="openEditTask('${t.id}')" title="تعديل"><i class="ti ti-pencil"></i></button>
+              <button class="btn btn-sm btn-icon btn-danger" onclick="askDelTask('${t.id}')" title="حذف"><i class="ti ti-trash"></i></button>
+            </div>`
+        }
+      </div>
+    </div>`;
+  });
+  document.getElementById('tasks-list').innerHTML=h;
+}
+
+function ftasks(dept,el){
+  deptFilter=dept;
+  document.querySelectorAll('#task-tabs .tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderTasks();
+}
+
+/* ══════════════ MY TASKS (accountant) ══════════════ */
+function renderMyTasks(){
+  const u=uById(currentUser.id);
+  if(!u)return;
+  document.getElementById('my-greet-name').textContent=u.name;
+  document.getElementById('my-greet-dept').textContent=DL[u.dept];
+  document.getElementById('my-greet-av').textContent=ini(u.name);
+
+  const ut=tasks.filter(t=>t.userId===u.id);
+  const done=ut.filter(t=>t.status==='done').length,
+        rev=ut.filter(t=>t.status==='review').length,
+        pend=ut.filter(t=>t.status==='pending').length;
+
+  document.getElementById('my-stats').innerHTML=[
+    {l:'إجمالي مهامي',v:ut.length,i:'ti-list-check',c:'blue'},
+    {l:'مكتملة',v:done,i:'ti-circle-check',c:'green'},
+    {l:'تحت المراجعة',v:rev,i:'ti-clock-hour-4',c:'amber'},
+    {l:'معلقة',v:pend,i:'ti-alert-circle',c:'red'},
+  ].map(s=>`<div class="sc ${s.c}"><div class="sc-icon ${s.c}"><i class="ti ${s.i}"></i></div><div class="sc-val ${s.c}">${s.v}</div><div class="sc-lbl">${s.l}</div></div>`).join('');
+
+  document.getElementById('my-task-bdg').textContent=pend;
+
+  if(!ut.length){document.getElementById('my-tasks-list').innerHTML=empty('لا توجد مهام مسندة إليك حالياً');return;}
+  let h='';
+  ut.forEach(t=>{
+    const locked=t.status==='done';
+    h+=`<div class="tr">
+      <div class="tc ${t.status==='done'?'done':t.status==='review'?'review':''} ${locked?'locked':''}"
+           onclick="${locked?'lockedMsgUser()':"cycleStatus('"+t.id+"')"}"
+           title="${locked?'مكتملة ومعتمدة من المدير':t.status==='pending'?'اضغط لبدء تنفيذ المهمة (تحت المراجعة)':'اضغط لتأكيد اكتمال المهمة'}">
+        ${t.status==='done'?'<i class="ti ti-check"></i>':t.status==='review'?'<i class="ti ti-dots" style="font-size:10px;color:var(--amber)"></i>':''}
+      </div>
+      <div class="ti-info">
+        <div class="tt ${t.status==='done'?'done-text':''}">${t.title}</div>
+        <div class="td-desc">${t.desc||'—'}</div>
+        <div class="tm">
+          <span class="tmi"><i class="ti ${DI[t.dept]}"></i>${DL[t.dept]}</span>
+          <span class="tmi"><i class="ti ti-calendar"></i>${t.due}</span>
+          ${t.recurring&&t.recurring!=='none'?`<span class="tmi" style="color:var(--accent)"><i class="ti ti-repeat" style="color:var(--accent)"></i>${t.recurring==='monthly'?'شهرية':'أسبوعية'}</span>`:''}
+        </div>
+      </div>
+      <div class="ta">
+        ${locked
+          ?`<span class="pill pill-done"><i class="ti ti-circle-check"></i>مكتملة</span>
+            <span class="lkd-badge"><i class="ti ti-lock"></i>معتمدة من المدير</span>`
+          :`<span class="pill ${SP[t.status]}"><i class="ti ${SI[t.status]}"></i>${SL[t.status]}</span>
+            <span class="prio-b ${PC[t.prio]}">${PL[t.prio]}</span>`
+        }
+      </div>
+    </div>`;
+  });
+  document.getElementById('my-tasks-list').innerHTML=h;
+}
+function lockedMsgUser(){toast('هذه المهمة مكتملة ومعتمدة من المدير المالي','success');}
+
+/* ══════════════ SUPPLIER RECONCILIATION ══════════════ */
+function fmtMoney(v){
+  if(v===null||v===undefined||v===''||isNaN(v))return'—';
+  return Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function lastDoneRecon(supplierId,excludeId){
+  return reconciliations
+    .filter(r=>r.supplierId===supplierId&&r.status==='done'&&r.id!==excludeId)
+    .sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||''))[0];
+}
+
+/* ── Manager: upload supplier file ── */
+async function handleSupplierFile(file){
+  if(!file)return;
+  const status=document.getElementById('supplier-upload-status');
+  if(typeof XLSX==='undefined'){
+    status.innerHTML=`<i class="ti ti-alert-triangle" style="color:var(--red)"></i> تعذر تحميل مكتبة قراءة الملفات (XLSX). تأكد من الاتصال بالإنترنت.`;
+    return;
+  }
+  status.innerHTML=`<i class="ti ti-loader-2" style="animation:spin 1s linear infinite;display:inline-block"></i> جارٍ قراءة الملف...`;
+  try{
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data,{type:'array'});
+    const sheet=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+    let names=[];
+    rows.forEach(row=>{
+      const val=(row&&row[0]!==undefined?String(row[0]):'').trim();
+      if(val)names.push(val);
+    });
+    if(names.length && /^(اسم|name|supplier|مورد|الاسم)/i.test(names[0]))names.shift();
+    names=[...new Set(names.map(n=>n.trim()).filter(Boolean))];
+    if(!names.length){
+      status.innerHTML=`<i class="ti ti-alert-triangle" style="color:var(--amber)"></i> لم يتم العثور على أسماء موردين في الملف.`;
+      return;
+    }
+    const existing=new Set(suppliers.map(s=>(s.name||'').trim()));
+    const newNames=names.filter(n=>!existing.has(n));
+    let added=0;
+    for(let i=0;i<newNames.length;i+=400){
+      const chunk=newNames.slice(i,i+400);
+      const batch=db.batch();
+      chunk.forEach(n=>{
+        const ref=SUPPLIERS_COL.doc();
+        batch.set(ref,{name:n});
+        added++;
+      });
+      await batch.commit();
+    }
+    status.innerHTML=`<i class="ti ti-circle-check" style="color:var(--green)"></i> تم قراءة ${names.length} اسم من الملف — أُضيف <strong>${added}</strong> مورد جديد ${added<names.length?`(${names.length-added} موجود مسبقاً)`:''}`;
+    toast(`تم رفع الملف بنجاح — أُضيف ${added} مورد جديد`,'success');
+    document.getElementById('supplier-file').value='';
+  }catch(err){
+    status.innerHTML=`<i class="ti ti-alert-triangle" style="color:var(--red)"></i> فشلت قراءة الملف: ${err.message}`;
+  }
+}
+
+/* ── Manager: pick random sample & assign ── */
+async function assignRandomSample(){
+  const pct=parseFloat(document.getElementById('recon-pct').value)||20;
+  const accId=document.getElementById('recon-accountant').value;
+  if(!accId){toast('اختر المحاسب المكلف من قسم الموردين أولاً','warn');return;}
+  if(!suppliers.length){toast('لا يوجد موردون محمّلون — قم برفع الملف أولاً','warn');return;}
+  const n=Math.max(1,Math.round(suppliers.length*pct/100));
+  const shuffled=[...suppliers].sort(()=>Math.random()-0.5);
+  const sample=shuffled.slice(0,n);
+  const today=new Date().toISOString().slice(0,10);
+  try{
+    for(let i=0;i<sample.length;i+=400){
+      const chunk=sample.slice(i,i+400);
+      const batch=db.batch();
+      chunk.forEach(s=>{
+        const ref=RECON_COL.doc();
+        batch.set(ref,{
+          supplierId:s.id,supplierName:s.name,accountantId:accId,
+          companyBalance:null,supplierBalance:null,difference:null,
+          reasonDiff:'',actionsTaken:'',status:'pending',
+          assignedAt:today,completedAt:null
+        });
+      });
+      await batch.commit();
+    }
+    const accName=(uById(accId)||{}).name||'المحاسب';
+    toast(`تم اختيار ${n} مورد (${pct}%) وتكليف ${accName} بمطابقة أرصدتهم`,'success');
+  }catch(err){toast('فشل التكليف: '+err.message,'error');}
+}
+
+/* ── Manager: render reconciliation page ── */
+function renderReconciliationPage(){
+  if(!currentUser||currentUser.type!=='manager')return;
+  const sel=document.getElementById('recon-accountant');
+  const supDeptUsers=users.filter(u=>u.dept==='suppliers');
+  const prevVal=sel.value;
+  sel.innerHTML=supDeptUsers.map(u=>`<option value="${u.id}">${u.name} (${RL[u.role]})</option>`).join('');
+  if(supDeptUsers.find(u=>u.id===prevVal))sel.value=prevVal;
+  if(!supDeptUsers.length)sel.innerHTML='<option value="">لا يوجد موظفون في قسم الموردين</option>';
+
+  const pct=parseFloat(document.getElementById('recon-pct').value)||20;
+  const n=suppliers.length?Math.max(1,Math.round(suppliers.length*pct/100)):0;
+  document.getElementById('recon-sample-info').innerHTML=suppliers.length
+    ?`إجمالي الموردين: <strong>${suppliers.length}</strong> — سيتم اختيار <strong>${n}</strong> مورد عشوائياً (${pct}%) وتكليفهم بالمطابقة`
+    :'لم يتم رفع أي موردين بعد — استخدم نافذة الرفع على اليسار';
+
+  const pendingCount=reconciliations.filter(r=>r.status==='pending').length;
+  document.getElementById('recon-bdg').textContent=pendingCount;
+
+  const tbl=document.getElementById('suppliers-table');
+  if(!suppliers.length){
+    tbl.innerHTML='<tr><td style="padding:2rem;text-align:center;color:var(--th)">لا يوجد موردون — قم برفع ملف الموردين أولاً</td></tr>';
+    return;
+  }
+  let h='<tr><th>اسم المورد</th><th>آخر مطابقة</th><th>رصيد الشركة (آخر مطابقة)</th><th>الفارق (آخر مطابقة)</th><th>الحالة الحالية</th></tr>';
+  suppliers.forEach(s=>{
+    const last=lastDoneRecon(s.id);
+    const pending=reconciliations.find(r=>r.supplierId===s.id&&r.status==='pending');
+    h+=`<tr>
+      <td style="font-weight:600">${s.name}</td>
+      <td>${last?last.completedAt:'<span style="color:var(--th)">لم تتم من قبل</span>'}</td>
+      <td>${last?fmtMoney(last.companyBalance):'—'}</td>
+      <td style="${last&&last.difference!==0?'color:var(--red);font-weight:600':''}">${last?fmtMoney(last.difference):'—'}</td>
+      <td>${pending?`<span class="pill pill-review"><i class="ti ti-clock-hour-4"></i>قيد التنفيذ — ${(uById(pending.accountantId)||{}).name||''}</span>`:'<span class="pill pill-pending">لا توجد مطابقة جارية</span>'}</td>
+    </tr>`;
+  });
+  tbl.innerHTML=h;
+}
+
+/* ── Accountant: render my reconciliations ── */
+function renderMyRecon(){
+  if(!currentUser||currentUser.type==='manager')return;
+  const myRecons=reconciliations.filter(r=>r.accountantId===currentUser.id);
+  const pending=myRecons.filter(r=>r.status==='pending');
+  const done=myRecons.filter(r=>r.status==='done');
+
+  const statsEl=document.getElementById('recon-stats');
+  if(statsEl){
+    statsEl.innerHTML=[
+      {l:'إجمالي المطابقات',v:myRecons.length,i:'ti-scale',c:'blue'},
+      {l:'قيد التنفيذ',v:pending.length,i:'ti-clock-hour-4',c:'amber'},
+      {l:'مكتملة',v:done.length,i:'ti-circle-check',c:'green'},
+    ].map(s=>`<div class="sc ${s.c}"><div class="sc-icon ${s.c}"><i class="ti ${s.i}"></i></div><div class="sc-val ${s.c}">${s.v}</div><div class="sc-lbl">${s.l}</div></div>`).join('');
+  }
+  const bdg=document.getElementById('my-recon-bdg');
+  if(bdg)bdg.textContent=pending.length;
+
+  const pendEl=document.getElementById('recon-pending-list');
+  if(pendEl)pendEl.innerHTML=pending.length?pending.map(r=>reconCardHtml(r)).join(''):empty('لا توجد مطابقات قيد التنفيذ حالياً');
+
+  const doneEl=document.getElementById('recon-done-list');
+  if(doneEl){
+    doneEl.innerHTML=done.length?done.slice().sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||'')).map(r=>`
+    <div class="recon-item">
+      <div class="recon-item-head">
+        <div style="font-weight:700;font-size:14px">${r.supplierName}</div>
+        <span class="pill pill-done"><i class="ti ti-circle-check"></i>تمت في ${r.completedAt}</span>
+      </div>
+      <div class="fr">
+        <div class="mini-stat"><div class="ml">رصيد الشركة</div><div class="mv">${fmtMoney(r.companyBalance)}</div></div>
+        <div class="mini-stat"><div class="ml">رصيد المورد</div><div class="mv">${fmtMoney(r.supplierBalance)}</div></div>
+      </div>
+      <div class="mini-stat" style="margin-top:8px">
+        <div class="ml">الفارق</div>
+        <div class="mv" style="color:${r.difference===0?'var(--green)':'var(--red)'}">${fmtMoney(r.difference)}${r.difference===0?' (متطابق)':''}</div>
+      </div>
+      ${r.reasonDiff?`<div style="margin-top:8px"><div class="ml" style="font-size:11px;color:var(--ts)">سبب الفرق</div><div style="font-size:13px;margin-top:2px">${r.reasonDiff}</div></div>`:''}
+      ${r.actionsTaken?`<div style="margin-top:8px"><div class="ml" style="font-size:11px;color:var(--ts)">الإجراء المتخذ لإنهاء المطابقة</div><div style="font-size:13px;margin-top:2px">${r.actionsTaken}</div></div>`:''}
+    </div>`).join('') : empty('لا توجد مطابقات مكتملة بعد');
+  }
+}
+
+function reconCardHtml(r){
+  const last=lastDoneRecon(r.supplierId,r.id);
+  return`<div class="recon-item">
+    <div class="recon-item-head">
+      <div>
+        <div style="font-weight:700;font-size:14px">${r.supplierName}</div>
+        <div class="lk-note">${last
+          ?`<i class="ti ti-history"></i>آخر مطابقة: ${last.completedAt} — كان رصيد الشركة ${fmtMoney(last.companyBalance)} والفارق ${fmtMoney(last.difference)}`
+          :`<i class="ti ti-info-circle"></i>لا توجد مطابقات سابقة لهذا المورد`}</div>
+      </div>
+      <span class="pill pill-review"><i class="ti ti-clock-hour-4"></i>قيد التنفيذ</span>
+    </div>
+    <div class="fr" style="margin-top:.75rem">
+      <div class="fg"><label>رصيد المورد بدفاتر الشركة</label><input type="number" step="0.01" id="rc-company-${r.id}" oninput="calcDiff('${r.id}')" placeholder="0.00"/></div>
+      <div class="fg"><label>رصيد المورد بدفاتره الخاصة</label><input type="number" step="0.01" id="rc-supplier-${r.id}" oninput="calcDiff('${r.id}')" placeholder="0.00"/></div>
+    </div>
+    <div class="fg"><label>الفارق</label><div class="diff-display" id="rc-diff-${r.id}">—</div></div>
+    <div class="fg"><label>أسباب الفروق</label><textarea id="rc-reason-${r.id}" placeholder="مثال: فاتورة شراء لم تُسجل بدفاتر المورد، شيك لم يُحصّل بعد..."></textarea></div>
+    <div class="fg"><label>الإجراءات المتخذة لإنهاء المطابقة وضبط الرصيد</label><textarea id="rc-actions-${r.id}" placeholder="مثال: تم التواصل مع المورد وتسجيل الفاتورة الناقصة بتاريخ ..."></textarea></div>
+    <button class="btn btn-primary" onclick="saveReconciliation('${r.id}')"><i class="ti ti-check"></i>حفظ وإنهاء المطابقة</button>
+  </div>`;
+}
+
+function calcDiff(id){
+  const cEl=document.getElementById('rc-company-'+id);
+  const sEl=document.getElementById('rc-supplier-'+id);
+  const el=document.getElementById('rc-diff-'+id);
+  if(!cEl||!sEl||!el)return;
+  const c=parseFloat(cEl.value),s=parseFloat(sEl.value);
+  if(isNaN(c)||isNaN(s)){el.textContent='—';el.style.color='';return;}
+  const diff=c-s;
+  el.textContent=fmtMoney(diff)+(diff===0?' (متطابق)':'');
+  el.style.color=diff===0?'var(--green)':'var(--red)';
+}
+
+async function saveReconciliation(id){
+  const c=parseFloat(document.getElementById('rc-company-'+id).value);
+  const s=parseFloat(document.getElementById('rc-supplier-'+id).value);
+  const reason=document.getElementById('rc-reason-'+id).value.trim();
+  const actions=document.getElementById('rc-actions-'+id).value.trim();
+  if(isNaN(c)||isNaN(s)){toast('يرجى إدخال رصيد المورد بدفاتر الشركة وبدفاتره الخاصة','warn');return;}
+  const diff=Math.round((c-s)*100)/100;
+  if(diff!==0&&!reason){toast('يوجد فارق بين الرصيدين — يرجى ذكر سبب الفرق','warn');return;}
+  try{
+    await RECON_COL.doc(id).update({
+      companyBalance:c,supplierBalance:s,difference:diff,
+      reasonDiff:reason,actionsTaken:actions,
+      status:'done',completedAt:new Date().toISOString().slice(0,10)
+    });
+    toast('تم حفظ المطابقة وإقفالها بنجاح ✓','success');
+  }catch(err){toast('فشل الحفظ: '+err.message,'error');}
+}
+
+/* ══════════════ STATUS UPDATES (Firestore) ══════════════ */
+async function cycleStatus(id){
+  const t=tById(id);if(!t)return;
+  if(t.status==='done'){currentUser.type==='manager'?lockedMsg():lockedMsgUser();return;}
+
+  if(currentUser.type==='manager'){
+    // Manager circle: simple toggle pending<->review (final "done" is set via the edit modal)
+    const newStatus=t.status==='pending'?'review':'pending';
+    await updateTaskStatus(id,newStatus);
+    return;
+  }
+
+  // Accountant: pending -> review -> done (done requires confirmation, then locks)
+  if(t.status==='pending'){
+    await updateTaskStatus(id,'review');
+  }else{
+    showConfirm(
+      'تأكيد اكتمال المهمة',
+      'هل أنت متأكد من أن هذه المهمة قد اكتملت بالكامل؟<br>بعد التأكيد ستُقفل المهمة ولن تستطيع تعديل حالتها مرة أخرى إلا المدير المالي.',
+      'info','ti-circle-check',
+      async ()=>{ await updateTaskStatus(id,'done',t); },
+      'تأكيد الاكتمال'
+    );
+  }
+}
+
+async function updateTaskStatus(id,newStatus,taskForRecurring){
+  try{
+    await TASKS_COL.doc(id).update({status:newStatus});
+    if(newStatus==='done'&&taskForRecurring&&taskForRecurring.recurring&&taskForRecurring.recurring!=='none'){
+      const nextDue=addPeriod(taskForRecurring.due,taskForRecurring.recurring);
+      await TASKS_COL.add({title:taskForRecurring.title,desc:taskForRecurring.desc,dept:taskForRecurring.dept,userId:taskForRecurring.userId,prio:taskForRecurring.prio,due:nextDue,status:'pending',recurring:taskForRecurring.recurring});
+      toast(`تم اعتماد المهمة وإقفالها، وأُنشئت نسخة جديدة بتاريخ ${nextDue} تلقائياً 🔁`,'success');
+    }else if(newStatus==='done'){
+      toast('تم اعتماد المهمة كمكتملة وإقفالها ✓','success');
+    }else{
+      toast(`تم تغيير الحالة إلى: ${SL[newStatus]}`,'success');
+    }
+  }catch(err){toast('فشل التحديث: '+err.message,'error');}
+}
+
+async function setStatus(id,status){
+  const t=tById(id);if(!t)return;
+  if(status==='done'||t.status==='done'){lockedMsg();return;}
+  closeDropdowns();
+  try{
+    await TASKS_COL.doc(id).update({status:status});
+    toast(`تم تغيير الحالة إلى: ${SL[status]}`,'success');
+  }catch(err){toast('فشل التحديث: '+err.message,'error');}
+}
+
+function mgrUnlock(id){
+  showConfirm(
+    'فتح قفل المهمة المكتملة',
+    `أنت <strong>${mgrName}</strong> (المدير المالي).<br>هل تريد إعادة فتح هذه المهمة وتغيير حالتها؟`,
+    'warn','ti-lock-open',
+    async ()=>{
+      try{
+        await TASKS_COL.doc(id).update({status:'review'});
+        toast('تم فتح القفل — المهمة الآن "تحت المراجعة"','success');
+      }catch(err){toast('فشل التحديث: '+err.message,'error');}
+    },'فتح القفل'
+  );
+}
+
+function lockedMsg(){toast('هذه المهمة مكتملة ومقفلة — استخدم زر "فتح القفل" (صلاحية المدير)','warn');}
+
+/* ── Dropdowns ── */
+function togDrop(id){
+  const el=document.getElementById('sd-'+id);
+  const was=el.classList.contains('open');
+  closeDropdowns();
+  if(!was)el.classList.add('open');
+}
+function closeDropdowns(){document.querySelectorAll('.sdrop.open').forEach(d=>d.classList.remove('open'));}
+document.addEventListener('click',e=>{if(!e.target.closest('.sdrop'))closeDropdowns();});
+
+/* ══════════════ DEPARTMENTS (manager) ══════════════ */
+function renderDepts(){
+  let h='';
+  ['suppliers','customers','current'].forEach(d=>{
+    const dt=tasks.filter(t=>t.dept===d),
+          dd=dt.filter(t=>t.status==='done').length,
+          dr=dt.filter(t=>t.status==='review').length,
+          dp=dt.filter(t=>t.status==='pending').length,
+          pct=dt.length?Math.round(dd/dt.length*100):0;
+    const col=DC[d],colv=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+    const du=users.filter(u=>u.dept===d);
+    h+=`<div class="dept-card">
+      <div class="dept-card-hd">
+        <div class="dept-icon ${col}"><i class="ti ${DI[d]}"></i></div>
+        <div>
+          <div style="font-size:15px;font-weight:700">${DL[d]}</div>
+          <div style="font-size:12px;color:var(--ts);margin-top:2px">${du.length} موظف · ${dt.length} مهمة</div>
+        </div>
+      </div>
+      <div style="padding:1rem 1.5rem 0">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:12px;color:var(--ts)">نسبة الإنجاز</span>
+          <span style="font-size:13px;font-weight:700;color:${colv}">${pct}%</span>
+        </div>
+        <div class="pb" style="height:8px"><div class="pf ${pct>=70?'green':pct>=40?'amber':'red'}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="dept-stats" style="margin-top:1rem">
+        <div class="dept-ms"><div class="dsv" style="color:var(--green)">${dd}</div><div class="dsl">مكتملة</div></div>
+        <div class="dept-ms"><div class="dsv" style="color:var(--amber)">${dr}</div><div class="dsl">مراجعة</div></div>
+        <div class="dept-ms"><div class="dsv" style="color:var(--ts)">${dp}</div><div class="dsl">معلقة</div></div>
+        <div class="dept-ms"><div class="dsv" style="color:var(--accent)">${dt.length}</div><div class="dsl">الإجمالي</div></div>
+      </div>
+      <div class="dept-mbrs">
+        <h3>أعضاء القسم</h3>
+        ${du.length?du.map(u=>`<div class="mbr-row">
+          <div class="av ${avc(u.id)}" style="width:28px;height:28px;font-size:11px">${ini(u.name)}</div>
+          <div class="mn2">${u.name}</div>
+          <span class="rt">${RL[u.role]}</span>
+          <button class="btn btn-sm btn-icon" style="margin-right:4px" onclick="openEditUser('${u.id}')" title="تعديل"><i class="ti ti-pencil" style="font-size:13px"></i></button>
+        </div>`).join(''):'<div style="font-size:12px;color:var(--th);padding:4px 0">لا يوجد أعضاء</div>'}
+      </div>
+    </div>`;
+  });
+  document.getElementById('depts-grid').innerHTML=h;
+}
+
+/* ══════════════ USERS (manager) ══════════════ */
+function renderUsers(){
+  if(!users.length){document.getElementById('users-grid').innerHTML=empty('لا يوجد مستخدمون — أضف محاسباً جديداً');return;}
+  let h='';
+  users.forEach(u=>{
+    const ut=tasks.filter(t=>t.userId===u.id),
+          ud=ut.filter(t=>t.status==='done').length,
+          ur=ut.filter(t=>t.status==='review').length;
+    h+=`<div class="uc">
+      <div class="uc-top">
+        <div class="av ${avc(u.id)}">${ini(u.name)}</div>
+        <div><div class="uc-name">${u.name}</div><div class="uc-email">${u.email}</div></div>
+      </div>
+      <div class="uc-tags">
+        <span class="tag ${RC[u.role]}">${RL[u.role]}</span>
+        <span class="tag tag-dept"><i class="ti ${DI[u.dept]}" style="font-size:11px"></i>${DL[u.dept]}</span>
+      </div>
+      <div class="uc-stats">
+        <div class="ucs"><div class="sv" style="color:var(--accent)">${ut.length}</div><div class="sl">إجمالي</div></div>
+        <div class="ucs"><div class="sv" style="color:var(--green)">${ud}</div><div class="sl">مكتملة</div></div>
+        <div class="ucs"><div class="sv" style="color:var(--amber)">${ur}</div><div class="sl">مراجعة</div></div>
+      </div>
+      <div class="uc-acts">
+        <button class="btn btn-sm" style="flex:1" onclick="openAssign('${u.id}')"><i class="ti ti-plus"></i>إسناد مهمة</button>
+        <button class="btn btn-sm btn-icon" onclick="openEditUser('${u.id}')" title="تعديل بيانات المستخدم"><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-sm btn-icon btn-danger" onclick="askDelUser('${u.id}')" title="حذف المستخدم"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('users-grid').innerHTML=h;
+}
+
+/* ══════════════ REPORTS (manager) ══════════════ */
+function renderReports(){
+  let rh='';
+  ['suppliers','customers','current'].forEach(d=>{
+    const dt=tasks.filter(t=>t.dept===d),dd=dt.filter(t=>t.status==='done').length;
+    const pct=dt.length?Math.round(dd/dt.length*100):0;
+    const col=pct>=70?'green':pct>=40?'amber':'red';
+    rh+=`<div class="rr">
+      <div class="rd"><i class="ti ${DI[d]}"></i>${DL[d]}</div>
+      <div class="rb"><div class="pb" style="height:10px"><div class="pf ${col}" style="width:${pct}%"></div></div>
+        <div class="rsub">${dd} مكتملة من ${dt.length} مهمة</div></div>
+      <div class="rpct" style="color:var(--${col==='green'?'green':col==='amber'?'amber':'red'})">${pct}%</div>
+    </div>`;
+  });
+  document.getElementById('rpt-depts').innerHTML=rh;
+
+  const sorted=[...users].map(u=>{
+    const ut=tasks.filter(t=>t.userId===u.id),ud=ut.filter(t=>t.status==='done').length;
+    return{...u,pct:ut.length?Math.round(ud/ut.length*100):0,done:ud,total:ut.length};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  let th='';
+  sorted.slice(0,4).forEach((u,i)=>{
+    th+=`<div class="ur">
+      <div style="font-size:14px;font-weight:700;color:var(--th);width:20px">${i+1}</div>
+      <div class="av ${avc(u.id)}">${ini(u.name)}</div>
+      <div class="ui"><div class="un">${u.name}</div><div class="uro">${DL[u.dept]}</div>
+        <div class="uprog"><div class="pb"><div class="pf" style="width:${u.pct}%"></div></div><div class="upct">${u.pct}%</div></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('rpt-top').innerHTML=th||empty('لا توجد بيانات');
+
+  const done=tasks.filter(t=>t.status==='done');
+  let dh='';
+  done.forEach(t=>{
+    const u=uById(t.userId);
+    dh+=`<div class="tr">
+      <div class="tc done locked"><i class="ti ti-check"></i></div>
+      <div class="ti-info"><div class="tt done-text">${t.title}</div>
+        <div class="tm">
+          <span class="tmi"><i class="ti ti-user"></i>${u?u.name:'—'}</span>
+          <span class="tmi"><i class="ti ti-calendar"></i>${t.due}</span>
+        </div>
+      </div>
+      <div class="ta"><span class="pill pill-done"><i class="ti ti-circle-check"></i>مكتملة</span><span class="lkd-badge"><i class="ti ti-lock"></i>مقفلة</span></div>
+    </div>`;
+  });
+  document.getElementById('rpt-done').innerHTML=dh||empty('لا توجد مهام مكتملة بعد');
+}
+
+/* ══════════════ NOTIFICATIONS (shared, static demo) ══════════════ */
+const NOTIFS=[
+  {dot:'nd-amber',text:'مهمة "متابعة مديونيات العملاء" موعدها غداً',time:'منذ ساعة',unread:true},
+  {dot:'nd-red',text:'مهمة "تحصيل الشيكات المستحقة" قاربت على الموعد النهائي',time:'منذ 3 ساعات',unread:true},
+  {dot:'nd-green',text:'أكمل علي محمود مهمة "مراجعة فواتير الموردين"',time:'منذ 5 ساعات',unread:false},
+  {dot:'nd-blue',text:'تمت إضافة مهمة جديدة لقسم الموردين',time:'أمس 2:30 م',unread:false},
+  {dot:'nd-green',text:'أتمت نورا حسن تقرير التدفقات النقدية الأسبوعي',time:'أمس 10:00 ص',unread:false},
+];
+function renderNotifs(){
+  document.getElementById('notif-list').innerHTML=NOTIFS.map(n=>`
+    <div class="nr ${n.unread?'unread':''}">
+      <div class="nd ${n.dot}"></div>
+      <div><div class="nt">${n.text}</div><div class="ntm">${n.time}</div></div>
+    </div>`).join('');
+}
+
+/* ══════════════ MODAL: TASK (manager only) ══════════════ */
+function openAddTask(){
+  document.getElementById('tm-title').textContent='إسناد مهمة جديدة';
+  document.getElementById('ts-lbl').textContent='إسناد المهمة';
+  document.getElementById('t-id').value='';
+  document.getElementById('t-title').value='';
+  document.getElementById('t-desc').value='';
+  document.getElementById('t-dept').value='suppliers';
+  document.getElementById('t-prio').value='med';
+  document.getElementById('t-recurring').value='none';
+  document.getElementById('t-status-grp').style.display='none';
+  const d=new Date();d.setDate(d.getDate()+7);
+  document.getElementById('t-due').value=d.toISOString().slice(0,10);
+  updateTUsers();
+  openModal('task-modal');
+}
+
+function openEditTask(id){
+  const t=tById(id);if(!t)return;
+  document.getElementById('tm-title').textContent='تعديل المهمة';
+  document.getElementById('ts-lbl').textContent='حفظ التعديلات';
+  document.getElementById('t-id').value=t.id;
+  document.getElementById('t-title').value=t.title;
+  document.getElementById('t-desc').value=t.desc||'';
+  document.getElementById('t-dept').value=t.dept;
+  document.getElementById('t-prio').value=t.prio;
+  document.getElementById('t-due').value=t.due;
+  document.getElementById('t-recurring').value=t.recurring||'none';
+  document.getElementById('t-status-grp').style.display='block';
+  document.getElementById('t-status').value=t.status;
+  updateTUsers();
+  document.getElementById('t-user').value=t.userId;
+  openModal('task-modal');
+}
+
+async function saveTask(){
+  const title=document.getElementById('t-title').value.trim();
+  if(!title){toast('يرجى إدخال عنوان المهمة','warn');return;}
+  const eid=document.getElementById('t-id').value;
+  const dept=document.getElementById('t-dept').value;
+  const userId=document.getElementById('t-user').value;
+  const prio=document.getElementById('t-prio').value;
+  const due=document.getElementById('t-due').value||'2026-07-01';
+  const desc=document.getElementById('t-desc').value.trim();
+  const recurring=document.getElementById('t-recurring').value;
+  try{
+    if(eid){
+      const oldTask=tById(eid);
+      const wasDone=oldTask&&oldTask.status==='done';
+      const newStatus=document.getElementById('t-status').value;
+      const data={title,desc,dept,userId,prio,due,status:newStatus,recurring};
+      await TASKS_COL.doc(eid).update(data);
+      if(newStatus==='done'&&!wasDone&&recurring!=='none'){
+        const nextDue=addPeriod(due,recurring);
+        await TASKS_COL.add({title,desc,dept,userId,prio,due:nextDue,status:'pending',recurring});
+        toast(`تم اعتماد المهمة، وأُنشئت نسخة جديدة بتاريخ ${nextDue} تلقائياً 🔁`,'success');
+      }else{
+        toast('تم تحديث المهمة بنجاح ✓','success');
+      }
+    }else{
+      await TASKS_COL.add({title,desc,dept,userId,prio,due,status:'pending',recurring});
+      toast('تم إسناد المهمة بنجاح ✓','success');
+    }
+    closeModal('task-modal');
+  }catch(err){toast('فشل الحفظ: '+err.message,'error');}
+}
+
+function addPeriod(dateStr,period){
+  const d=new Date(dateStr+'T00:00:00');
+  if(period==='monthly')d.setMonth(d.getMonth()+1);
+  else if(period==='weekly')d.setDate(d.getDate()+7);
+  return d.toISOString().slice(0,10);
+}
+
+function askDelTask(id){
+  const t=tById(id);if(!t)return;
+  showConfirm('حذف المهمة',`هل تريد حذف المهمة "<strong>${t.title}</strong>" نهائياً؟<br>لا يمكن التراجع عن هذا الإجراء.`,'danger','ti-trash',async ()=>{
+    try{
+      await TASKS_COL.doc(id).delete();
+      toast('تم حذف المهمة','warn');
+    }catch(err){toast('فشل الحذف: '+err.message,'error');}
+  });
+}
+
+function updateTUsers(){
+  const dept=document.getElementById('t-dept').value;
+  const sel=document.getElementById('t-user');
+  const du=users.filter(u=>u.dept===dept);
+  sel.innerHTML=du.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  if(!du.length)sel.innerHTML='<option value="">— لا يوجد محاسبون في هذا القسم —</option>';
+}
+
+function openAssign(uid){
+  const u=uById(uid);if(!u)return;
+  openAddTask();
+  document.getElementById('t-dept').value=u.dept;
+  updateTUsers();
+  document.getElementById('t-user').value=uid;
+}
+
+/* ══════════════ MODAL: USER (manager only) ══════════════ */
+function openAddUser(){
+  document.getElementById('um-title').textContent='إضافة محاسب جديد';
+  document.getElementById('us-lbl').textContent='إضافة المستخدم';
+  document.getElementById('u-id').value='';
+  document.getElementById('u-name').value='';
+  document.getElementById('u-email').value='';
+  document.getElementById('u-dept').value='suppliers';
+  document.getElementById('u-role').value='accountant';
+  document.getElementById('u-pwd').value='';
+  document.getElementById('u-pwd').placeholder='كلمة المرور لتسجيل الدخول';
+  document.getElementById('u-pwd-hint').textContent='يستخدمها هذا المستخدم لتسجيل الدخول إلى النظام';
+  openModal('user-modal');
+}
+
+function openEditUser(id){
+  const u=uById(id);if(!u)return;
+  document.getElementById('um-title').textContent='تعديل بيانات المستخدم';
+  document.getElementById('us-lbl').textContent='حفظ التعديلات';
+  document.getElementById('u-id').value=u.id;
+  document.getElementById('u-name').value=u.name;
+  document.getElementById('u-email').value=u.email;
+  document.getElementById('u-dept').value=u.dept;
+  document.getElementById('u-role').value=u.role;
+  document.getElementById('u-pwd').value='';
+  document.getElementById('u-pwd').placeholder='اتركه فارغاً للحفاظ على كلمة المرور الحالية';
+  document.getElementById('u-pwd-hint').textContent='اتركه فارغاً إذا لا تريد تغيير كلمة المرور الحالية';
+  openModal('user-modal');
+}
+
+async function saveUser(){
+  const name=document.getElementById('u-name').value.trim();
+  const email=document.getElementById('u-email').value.trim();
+  if(!name||!email){toast('يرجى تعبئة الاسم والبريد الإلكتروني','warn');return;}
+  const dept=document.getElementById('u-dept').value;
+  const role=document.getElementById('u-role').value;
+  const pwd=document.getElementById('u-pwd').value.trim();
+  const eid=document.getElementById('u-id').value;
+  try{
+    if(eid){
+      const data={name,email,dept,role};
+      if(pwd)data.password=pwd;
+      await USERS_COL.doc(eid).update(data);
+      toast(`تم تحديث بيانات ${name} ✓`,'success');
+    }else{
+      if(!pwd){toast('يرجى تحديد كلمة مرور للمستخدم الجديد','warn');return;}
+      await USERS_COL.add({name,email,dept,role,password:pwd});
+      toast(`تمت إضافة ${name} بنجاح ✓`,'success');
+    }
+    closeModal('user-modal');
+  }catch(err){toast('فشل الحفظ: '+err.message,'error');}
+}
+
+function askDelUser(id){
+  const u=uById(id);if(!u)return;
+  const cnt=tasks.filter(t=>t.userId===id).length;
+  showConfirm('حذف المستخدم',
+    `هل تريد حذف "<strong>${u.name}</strong>" نهائياً؟${cnt?`<br>سيتم إلغاء تعيينه من <strong>${cnt}</strong> مهمة.`:''}`,
+    'danger','ti-user-x',
+    async ()=>{
+      try{
+        const batch=db.batch();
+        tasks.filter(t=>t.userId===id).forEach(t=>batch.update(TASKS_COL.doc(t.id),{userId:null}));
+        batch.delete(USERS_COL.doc(id));
+        await batch.commit();
+        toast(`تم حذف ${u.name}`,'warn');
+      }catch(err){toast('فشل الحذف: '+err.message,'error');}
+    }
+  );
+}
+
+/* ══════════════ MODAL helpers ══════════════ */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+/* ══════════════ CONFIRM ══════════════ */
+function showConfirm(title,msg,type,icon,cb,okLabel='تأكيد'){
+  document.getElementById('cnf-title').textContent=title;
+  document.getElementById('cnf-msg').innerHTML=msg;
+  document.getElementById('cnf-icon').className=`cnf-icon ${type}`;
+  document.getElementById('cnf-icon-i').className=`ti ${icon}`;
+  const btn=document.getElementById('cnf-ok');
+  btn.className=`btn ${type==='danger'?'btn-danger':type==='warn'?'btn-warning':'btn-primary'}`;
+  btn.innerHTML=`<i class="ti ti-check"></i>${okLabel}`;
+  pendingConfirm=cb;
+  document.getElementById('cnf-bg').classList.add('open');
+}
+function doConfirm(){closeConfirm();if(pendingConfirm)pendingConfirm();pendingConfirm=null;}
+function closeConfirm(){document.getElementById('cnf-bg').classList.remove('open');}
+document.getElementById('cnf-bg').addEventListener('click',e=>{if(e.target===document.getElementById('cnf-bg'))closeConfirm();});
+
+/* ══════════════ TOAST ══════════════ */
+function toast(msg,type='success'){
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<i class="ti ${type==='success'?'ti-circle-check':type==='error'?'ti-circle-x':'ti-alert-triangle'}"></i>${msg}`;
+  document.getElementById('tc').appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+/* ══════════════ START ══════════════ */
+if(db)init();
+</script>
+</body>
+</html>

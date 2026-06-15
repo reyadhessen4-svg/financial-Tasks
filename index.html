@@ -739,6 +739,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     <div id="inv-no-url-hint" class="info-alert" style="display:none">
       <i class="ti ti-info-circle"></i>لم تُحدّد رابط النظام بعد — اذهب لأعلى هذه الصفحة وأدخل رابط النظام حتى يُضاف تلقائياً للرسالة.
     </div>
+    <div class="hint" id="email-usage-hint-2" style="margin-bottom:.75rem"></div>
     <div class="mf">
       <button class="btn" onclick="closeModal('invite-modal')">إغلاق</button>
       <button class="btn btn-primary" onclick="openEmailInvite()"><i class="ti ti-send"></i>إرسال بالبريد الآن</button>
@@ -814,9 +815,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     </div>
     <div class="fg">
       <label class="dept-check" style="text-transform:none;font-size:13.5px">
-        <input type="checkbox" id="t-notify-email" checked/>
+        <input type="checkbox" id="t-notify-email"/>
         <i class="ti ti-mail"></i>إرسال إشعار بالبريد الإلكتروني للمحاسب بعد الحفظ
       </label>
+      <div class="hint" id="email-usage-hint"></div>
     </div>
     <div class="mf">
       <button class="btn" onclick="closeModal('task-modal')">إلغاء</button>
@@ -991,6 +993,32 @@ function sendEmailJS(toEmail,toName,subject,message){
   }
   return emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{
     to_email:toEmail,to_name:toName,subject:subject,message:message
+  }).then(res=>{incrementEmailUsage();return res;});
+}
+
+function currentMonthKey(){return new Date().toISOString().slice(0,7);}
+
+async function incrementEmailUsage(){
+  const month=currentMonthKey();
+  if(emailUsageMonth!==month){emailUsageMonth=month;emailUsageCount=0;}
+  emailUsageCount+=1;
+  try{
+    await SETTINGS_DOC.set({emailUsageMonth,emailUsageCount},{merge:true});
+  }catch(e){/* non-critical */}
+  renderEmailUsageHint();
+}
+
+function renderEmailUsageHint(){
+  const month=currentMonthKey();
+  const count=(emailUsageMonth===month)?emailUsageCount:0;
+  const remaining=Math.max(0,EMAILJS_FREE_LIMIT-count);
+  const text=`تم إرسال <strong>${count}</strong> رسالة هذا الشهر من أصل <strong>${EMAILJS_FREE_LIMIT}</strong> (الخطة المجانية) — المتبقي: ${remaining}`;
+  const color=remaining<=20?'var(--red)':'';
+  ['email-usage-hint','email-usage-hint-2'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.innerHTML=text;
+    el.style.color=color;
   });
 }
 
@@ -1011,6 +1039,9 @@ const RC={manager:'tag-mgr',accountant:'tag-acc',viewer:'tag-view'};
 let mgrName='م. أحمد رضا';
 let mgrPassword='admin123';
 let systemUrl='';
+let emailUsageMonth='';
+let emailUsageCount=0;
+const EMAILJS_FREE_LIMIT=200;
 let users=[];
 let tasks=[];
 let suppliers=[];
@@ -1060,7 +1091,7 @@ async function init(){
   try{
     await seedIfNeeded();
     const mgrDoc=await SETTINGS_DOC.get();
-    if(mgrDoc.exists){const d=mgrDoc.data();mgrName=d.name||mgrName;mgrPassword=d.password||mgrPassword;systemUrl=d.systemUrl||'';}
+    if(mgrDoc.exists){const d=mgrDoc.data();mgrName=d.name||mgrName;mgrPassword=d.password||mgrPassword;systemUrl=d.systemUrl||'';emailUsageMonth=d.emailUsageMonth||'';emailUsageCount=d.emailUsageCount||0;}
     const usersSnap=await USERS_COL.get();
     users=usersSnap.docs.map(d=>({id:d.id,...d.data()}));
     const tasksSnap=await TASKS_COL.get();
@@ -1115,8 +1146,11 @@ async function init(){
       mgrName=d.name||mgrName;
       mgrPassword=d.password||mgrPassword;
       systemUrl=d.systemUrl||'';
+      emailUsageMonth=d.emailUsageMonth||'';
+      emailUsageCount=d.emailUsageCount||0;
       const urlInput=document.getElementById('system-url-in');
       if(urlInput&&document.activeElement!==urlInput)urlInput.value=systemUrl;
+      renderEmailUsageHint();
       renderAll();
     }
   });
@@ -2214,11 +2248,12 @@ function openAddTask(){
   document.getElementById('t-dept').value='suppliers';
   document.getElementById('t-prio').value='med';
   document.getElementById('t-recurring').value='none';
-  document.getElementById('t-notify-email').checked=true;
+  document.getElementById('t-notify-email').checked=false;
   document.getElementById('t-status-grp').style.display='none';
   const d=new Date();d.setDate(d.getDate()+7);
   document.getElementById('t-due').value=d.toISOString().slice(0,10);
   updateTUsers();
+  renderEmailUsageHint();
   openModal('task-modal');
 }
 
@@ -2238,6 +2273,7 @@ function openEditTask(id){
   document.getElementById('t-status').value=t.status;
   updateTUsers();
   document.getElementById('t-user').value=t.userId;
+  renderEmailUsageHint();
   openModal('task-modal');
 }
 
@@ -2421,6 +2457,7 @@ function openInviteMessage(id){
   document.getElementById('inv-user-name').textContent=u.name;
   document.getElementById('inv-text').value=buildInviteText(u);
   document.getElementById('inv-no-url-hint').style.display=systemUrl?'none':'block';
+  renderEmailUsageHint();
   openModal('invite-modal');
 }
 

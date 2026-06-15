@@ -585,6 +585,14 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
       </div>
 
       <div class="card">
+        <div class="ch">
+          <h2><i class="ti ti-clipboard-list"></i>المطابقات المُكلَّفة حالياً (قيد التنفيذ)</h2>
+          <span id="pending-recon-count" class="pill pill-review"></span>
+        </div>
+        <div id="pending-recon-list"></div>
+      </div>
+
+      <div class="card">
         <div class="ch"><h2><i class="ti ti-list"></i>قائمة الموردين وحالة المطابقة</h2></div>
         <div style="overflow-x:auto"><table class="dtable" id="suppliers-table"></table></div>
       </div>
@@ -1381,6 +1389,50 @@ function lastDoneRecon(supplierId,excludeId){
     .sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||''))[0];
 }
 
+/* ── Manager: view & cancel currently-assigned (pending) reconciliations ── */
+function renderPendingReconAssignments(){
+  const list=document.getElementById('pending-recon-list');
+  const countEl=document.getElementById('pending-recon-count');
+  if(!list||!countEl)return;
+  const pending=reconciliations.filter(r=>r.status==='pending')
+    .sort((a,b)=>(b.assignedAt||'').localeCompare(a.assignedAt||''));
+
+  countEl.textContent=`${pending.length} مورد`;
+
+  if(!pending.length){
+    list.innerHTML=empty('لا توجد مطابقات قيد التنفيذ حالياً');
+    return;
+  }
+
+  list.innerHTML=pending.map(r=>{
+    const acc=uById(r.accountantId);
+    return`<div class="sample-row">
+      <div class="sr-name"><i class="ti ti-building-warehouse"></i>${r.supplierName}
+        <span style="font-weight:400;color:var(--ts);font-size:12px">— مكلَّف إلى ${acc?acc.name:'محاسب محذوف'} · ${r.assignedAt||'—'}</span>
+      </div>
+      <button class="btn btn-sm btn-icon btn-danger" onclick="askCancelRecon('${r.id}')" title="إلغاء تكليف هذا المورد بالمطابقة"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function askCancelRecon(reconId){
+  const r=reconciliations.find(x=>x.id===reconId);if(!r)return;
+  const acc=uById(r.accountantId);
+  showConfirm(
+    'إلغاء تكليف المطابقة',
+    `هل تريد إلغاء تكليف المحاسب <strong>${acc?acc.name:''}</strong> بمطابقة المورد "<strong>${r.supplierName}</strong>"؟<br>ستُحذف هذه المهمة من قائمته ولن تظهر له بعد الآن.`,
+    'danger','ti-x',
+    async ()=>{
+      try{
+        await RECON_COL.doc(reconId).delete();
+        toast(`تم إلغاء تكليف "${r.supplierName}"`,'warn');
+      }catch(err){toast('فشل الإلغاء: '+err.message,'error');}
+    },
+    'إلغاء التكليف'
+  );
+}
+
+
 /* ── Manager: full reconciliation history for a supplier ── */
 function openReconHistory(supplierId){
   const s=sById(supplierId);if(!s)return;
@@ -1610,6 +1662,7 @@ async function confirmAssignSample(){
 /* ── Manager: render reconciliation page ── */
 function renderReconciliationPage(){
   if(!currentUser||currentUser.type!=='manager')return;
+  renderPendingReconAssignments();
   const sel=document.getElementById('recon-accountant');
   const supDeptUsers=users.filter(u=>u.dept==='suppliers');
   const prevVal=sel.value;

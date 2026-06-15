@@ -702,6 +702,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     <div class="fg">
       <label>كلمة المرور</label>
       <input type="password" id="pwd-input" placeholder="••••••••"/>
+      <div class="hint" id="pwd-hint" style="display:none">كلمة مرور المدير المالي الافتراضية: <code style="background:var(--bg-card);border:1px solid var(--bd);border-radius:4px;padding:1px 6px;font-family:monospace">admin123</code> إن لم تكن قد غيّرتها من قبل</div>
     </div>
     <div class="mf">
       <button class="btn" onclick="closeModal('password-modal')">إلغاء</button>
@@ -1042,20 +1043,24 @@ async function init(){
 }
 
 function renderAll(){
-  initLogin();
-  if(!currentUser)return;
-  if(currentUser.type==='manager'){
-    if(document.getElementById('prof-name')){
-      document.getElementById('prof-name').textContent=mgrName;
-      document.getElementById('prof-av').textContent=ini(mgrName);
+  try{
+    initLogin();
+    if(!currentUser)return;
+    if(currentUser.type==='manager'){
+      if(document.getElementById('prof-name')){
+        document.getElementById('prof-name').textContent=mgrName;
+        document.getElementById('prof-av').textContent=ini(mgrName);
+      }
+      renderDashboard();renderTasks();renderDepts();renderUsers();renderReports();renderReconciliationPage();
+    }else{
+      renderMyTasks();
+      const u=uById(currentUser.id);
+      if(u&&userDepts(u).includes('suppliers'))renderMyRecon();
     }
-    renderDashboard();renderTasks();renderDepts();renderUsers();renderReports();renderReconciliationPage();
-  }else{
-    renderMyTasks();
-    const u=uById(currentUser.id);
-    if(u&&userDepts(u).includes('suppliers'))renderMyRecon();
+    renderNotifs();
+  }catch(err){
+    console.error('renderAll error:',err);
   }
-  renderNotifs();
 }
 
 /* ══════════════ LOGIN / SESSION ══════════════ */
@@ -1072,6 +1077,7 @@ function openLoginPwd(type,id){
   pendingLogin={type,id};
   document.getElementById('pwd-input').value='';
   document.getElementById('pwd-error').style.display='none';
+  document.getElementById('pwd-hint').style.display=type==='manager'?'block':'none';
   if(type==='manager'){
     document.getElementById('pwd-name').textContent=mgrName;
     document.getElementById('pwd-role').textContent='مدير مالي';
@@ -1101,13 +1107,18 @@ function attemptLogin(){
   }
   if(!ok){
     document.getElementById('pwd-error').style.display='block';
+    toast('كلمة المرور غير صحيحة','error');
     return;
   }
   document.getElementById('pwd-error').style.display='none';
-  closeModal('password-modal');
-  currentUser=target;
-  try{localStorage.setItem('ft_session',JSON.stringify(currentUser));}catch(e){}
-  showApp();
+  try{
+    closeModal('password-modal');
+    currentUser=target;
+    try{localStorage.setItem('ft_session',JSON.stringify(currentUser));}catch(e){}
+    showApp();
+  }catch(err){
+    toast('حدث خطأ أثناء تسجيل الدخول: '+err.message,'error');
+  }
 }
 document.getElementById('pwd-input').addEventListener('keydown',e=>{if(e.key==='Enter')attemptLogin();});
 
@@ -1122,7 +1133,12 @@ function logout(){
 function showApp(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-layout').style.display='flex';
-  applyRole();
+  try{
+    applyRole();
+  }catch(err){
+    console.error(err);
+    toast('حدث خطأ أثناء فتح النظام: '+err.message,'error');
+  }
 }
 
 function applyRole(){

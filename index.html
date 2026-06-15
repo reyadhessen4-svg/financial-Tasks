@@ -244,8 +244,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
 .nr.unread{background:#F5F7FF}
 .nd{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
 .nd-blue{background:var(--accent)}.nd-green{background:var(--green)}.nd-amber{background:var(--amber)}.nd-red{background:var(--red)}
+.nd-teal{background:var(--teal)}.nd-purple{background:var(--purple)}.nd-gray{background:var(--th)}
 .nt{font-size:13.5px;flex:1}
 .ntm{font-size:11.5px;color:var(--th);margin-top:2px}
+.nr .nf-del{flex-shrink:0;opacity:0;transition:opacity .12s}
+.nr:hover .nf-del{opacity:1}
 
 /* ── Modal ── */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.46);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
@@ -524,6 +527,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     <div class="page" id="page-users">
       <div class="ph"><h1>إدارة المستخدمين</h1><p>إضافة وتعديل وحذف المحاسبين وضبط صلاحياتهم وكلمات مرورهم</p></div>
       <div class="users-grid" id="users-grid"></div>
+
+      <div class="card" style="border-color:#F5C0C0;margin-top:1.5rem">
+        <div class="ch"><h2 style="color:var(--red)"><i class="ti ti-alert-triangle"></i>منطقة خطر</h2></div>
+        <div style="padding:1.25rem 1.5rem">
+          <p style="font-size:13px;color:var(--ts);margin-bottom:1rem;line-height:1.8">
+            حذف جميع البيانات الحالية في النظام (المستخدمون، المهام، الموردون، ومطابقات الموردين) للبدء بنظام نظيف بدون بيانات تجريبية.
+            <br>سيبقى حساب <strong>المدير المالي</strong> (اسمك وكلمة مرورك) كما هو.
+            <br><strong style="color:var(--red)">هذا الإجراء لا يمكن التراجع عنه.</strong>
+          </p>
+          <button class="btn btn-danger" onclick="askResetAllData()"><i class="ti ti-trash"></i>حذف جميع البيانات والبدء من جديد</button>
+        </div>
+      </div>
     </div>
 
     <!-- REPORTS (manager) -->
@@ -634,6 +649,25 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     <!-- NOTIFICATIONS (shared, filtered by department) -->
     <div class="page" id="page-notifs">
       <div class="ph"><h1>الإشعارات</h1><p>تنبيهات المهام والنشاط الأخير الخاصة بقسمك</p></div>
+
+      <div class="card nav-manager-only">
+        <div class="ch"><h2><i class="ti ti-bell-plus"></i>إرسال إشعار جديد</h2></div>
+        <div style="padding:1.25rem 1.5rem">
+          <div class="fr">
+            <div class="fg" style="grid-column:span 2"><label>نص الإشعار</label><input id="notif-text-in" placeholder="اكتب نص الإشعار..."/></div>
+            <div class="fg"><label>الجهة المستهدفة</label>
+              <select id="notif-dept-in">
+                <option value="all">كل الأقسام</option>
+                <option value="suppliers">الموردون</option>
+                <option value="customers">العملاء</option>
+                <option value="current">الحسابات الجارية</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="addNotification()"><i class="ti ti-send"></i>إرسال الإشعار</button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="tab-bar nav-manager-only" id="notif-dept-tabs">
           <button class="tab active" onclick="fnotifs('all',this)">الكل</button>
@@ -862,7 +896,7 @@ const firebaseConfig = {
   appId: "1:958609915400:web:4b10d5e69b25bced85dbbd",
 };
 
-let db,USERS_COL,TASKS_COL,SETTINGS_DOC,SUPPLIERS_COL,RECON_COL;
+let db,USERS_COL,TASKS_COL,SETTINGS_DOC,SUPPLIERS_COL,RECON_COL,NOTIFS_COL;
 
 if(window.__fbErr){
   showBootError(window.__fbErr);
@@ -876,6 +910,7 @@ if(window.__fbErr){
     TASKS_COL=db.collection('tasks');
     SUPPLIERS_COL=db.collection('suppliers');
     RECON_COL=db.collection('reconciliations');
+    NOTIFS_COL=db.collection('notifications');
     SETTINGS_DOC=db.collection('settings').doc('manager');
   }catch(err){
     showBootError('فشل الاتصال بـ Firebase:<br><span style="font-size:11px;opacity:.8">'+err.message+'</span>');
@@ -902,6 +937,7 @@ let users=[];
 let tasks=[];
 let suppliers=[];
 let reconciliations=[];
+let notificationsData=[];
 let deptFilter='all',pendingConfirm=null;
 let currentUser=null;   /* {type:'manager'} | {type:'user',id:STRING} */
 let pendingLogin=null;  /* {type, id} awaiting password */
@@ -928,52 +964,8 @@ async function seedIfNeeded(){
   if(!mgrDoc.exists){
     await SETTINGS_DOC.set({name:'م. أحمد رضا',password:'admin123'});
   }
-  const usersSnap=await USERS_COL.get();
-  if(usersSnap.empty){
-    const defUsers={
-      u1:{name:'علي محمود',email:'ali@co.com',depts:['suppliers'],dept:'suppliers',role:'manager',password:'123456'},
-      u2:{name:'سارة خالد',email:'sara@co.com',depts:['suppliers','current'],dept:'suppliers',role:'accountant',password:'123456'},
-      u3:{name:'منى أحمد',email:'mona@co.com',depts:['customers'],dept:'customers',role:'manager',password:'123456'},
-      u4:{name:'كريم يوسف',email:'karim@co.com',depts:['customers'],dept:'customers',role:'accountant',password:'123456'},
-      u5:{name:'خالد سامي',email:'khaled@co.com',depts:['current'],dept:'current',role:'manager',password:'123456'},
-      u6:{name:'نورا حسن',email:'nora@co.com',depts:['current','customers'],dept:'current',role:'accountant',password:'123456'},
-    };
-    for(const id in defUsers) await USERS_COL.doc(id).set(defUsers[id]);
-  }
-  const tasksSnap=await TASKS_COL.get();
-  if(tasksSnap.empty){
-    const defTasks={
-      t1:{title:'مراجعة فواتير الموردين – يناير',desc:'مراجعة وتدقيق جميع فواتير الموردين لشهر يناير',dept:'suppliers',userId:'u2',status:'done',prio:'high',due:'2026-06-10',recurring:'monthly'},
-      t2:{title:'تسوية حسابات الموردين المعلقة',desc:'تسوية الأرصدة المعلقة مع الموردين الرئيسيين',dept:'suppliers',userId:'u1',status:'review',prio:'med',due:'2026-06-15',recurring:'none'},
-      t3:{title:'متابعة مديونيات العملاء',desc:'إعداد كشف بمديونيات العملاء المتأخرة فوق 60 يوم',dept:'customers',userId:'u4',status:'pending',prio:'high',due:'2026-06-14',recurring:'none'},
-      t4:{title:'تحصيل الشيكات المستحقة',desc:'متابعة تحصيل الشيكات المستحقة خلال الشهر الحالي',dept:'customers',userId:'u3',status:'review',prio:'high',due:'2026-06-12',recurring:'none'},
-      t5:{title:'تسوية الحساب الجاري – البنك الأهلي',desc:'تسوية شهرية لكشف حساب البنك الأهلي',dept:'current',userId:'u6',status:'pending',prio:'med',due:'2026-06-20',recurring:'monthly'},
-      t6:{title:'تقرير التدفقات النقدية الأسبوعي',desc:'إعداد تقرير أسبوعي لحركة الأموال الواردة والصادرة',dept:'current',userId:'u5',status:'done',prio:'low',due:'2026-06-08',recurring:'weekly'},
-      t7:{title:'مراجعة عقود الموردين الجديدة',desc:'دراسة وتوثيق عقود الموردين المضافة هذا الربع',dept:'suppliers',userId:'u2',status:'pending',prio:'low',due:'2026-06-25',recurring:'none'},
-    };
-    for(const id in defTasks) await TASKS_COL.doc(id).set(defTasks[id]);
-  }
-  const suppliersSnap=await SUPPLIERS_COL.get();
-  if(suppliersSnap.empty){
-    const defSuppliers={
-      sup1:{name:'شركة النور للتوريدات'},
-      sup2:{name:'مؤسسة الأمل التجارية'},
-      sup3:{name:'شركة الفجر للمواد الخام'},
-      sup4:{name:'مصنع الاتحاد للصناعات'},
-      sup5:{name:'شركة الوفاء للنقل والتوزيع'},
-    };
-    for(const id in defSuppliers) await SUPPLIERS_COL.doc(id).set(defSuppliers[id]);
-  }
-  const reconSnap=await RECON_COL.get();
-  if(reconSnap.empty){
-    await RECON_COL.doc('r1').set({
-      supplierId:'sup1',supplierName:'شركة النور للتوريدات',accountantId:'u2',
-      companyBalance:45000,supplierBalance:42500,difference:2500,
-      reasonDiff:'فاتورة شراء بقيمة 2500 ج.م لم تُسجل في دفاتر المورد حتى تاريخه',
-      actionsTaken:'تم إرسال صورة الفاتورة والإشعار للمورد لتسجيلها، وتم إخطار قسم الحسابات الجارية بالمتابعة',
-      status:'done',assignedAt:'2026-05-01',completedAt:'2026-05-12'
-    });
-  }
+  // No demo data is seeded — the system starts empty.
+  // The manager adds departments' staff, tasks and suppliers from the UI.
 }
 
 function showLoadError(err){
@@ -999,6 +991,8 @@ async function init(){
     suppliers=suppliersSnap.docs.map(d=>({id:d.id,...d.data()}));
     const reconSnap=await RECON_COL.get();
     reconciliations=reconSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const notifsSnap=await NOTIFS_COL.get();
+    notificationsData=notifsSnap.docs.map(d=>({id:d.id,...d.data()}));
   }catch(err){
     showLoadError(err);
     return;
@@ -1031,6 +1025,10 @@ async function init(){
   });
   RECON_COL.onSnapshot(snap=>{
     reconciliations=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  });
+  NOTIFS_COL.onSnapshot(snap=>{
+    notificationsData=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderAll();
   });
   SETTINGS_DOC.onSnapshot(snap=>{
@@ -2036,16 +2034,8 @@ function renderReports(){
 }
 
 /* ══════════════ NOTIFICATIONS (filtered by department) ══════════════ */
-const NOTIFS=[
-  {dot:'nd-amber',text:'مهمة "متابعة مديونيات العملاء" موعدها غداً',time:'منذ ساعة',unread:true,dept:'customers'},
-  {dot:'nd-red',text:'مهمة "تحصيل الشيكات المستحقة" قاربت على الموعد النهائي',time:'منذ 3 ساعات',unread:true,dept:'customers'},
-  {dot:'nd-green',text:'أكمل علي محمود مهمة "مراجعة فواتير الموردين"',time:'منذ 5 ساعات',unread:false,dept:'suppliers'},
-  {dot:'nd-blue',text:'تمت إضافة مهمة جديدة لقسم الموردين',time:'أمس 2:30 م',unread:false,dept:'suppliers'},
-  {dot:'nd-amber',text:'تم تكليفك بمطابقة عينة جديدة من الموردين',time:'أمس 11:00 ص',unread:true,dept:'suppliers'},
-  {dot:'nd-green',text:'أتمت نورا حسن تقرير التدفقات النقدية الأسبوعي',time:'أمس 10:00 ص',unread:false,dept:'current'},
-  {dot:'nd-amber',text:'مهمة "تسوية الحساب الجاري – البنك الأهلي" موعدها قريب',time:'منذ يومين',unread:false,dept:'current'},
-  {dot:'nd-blue',text:'تم تحديث بيانات النظام والصلاحيات',time:'منذ 3 أيام',unread:false,dept:'all'},
-];
+/* ══════════════ NOTIFICATIONS (Firestore-backed, filtered by department) ══════════════ */
+const NOTIF_DOT={suppliers:'nd-blue',customers:'nd-teal',current:'nd-purple',all:'nd-gray'};
 
 let notifDeptFilter='all';
 
@@ -2056,28 +2046,61 @@ function fnotifs(dept,el){
   renderNotifs();
 }
 
+function fmtNotifTime(iso){
+  if(!iso)return'';
+  const d=new Date(iso);
+  if(isNaN(d.getTime()))return iso;
+  const date=d.toISOString().slice(0,10);
+  const time=d.toTimeString().slice(0,5);
+  return`${date} · ${time}`;
+}
+
 function renderNotifs(){
-  let list,bdgCount;
-  if(!currentUser){list=[];bdgCount=0;}
+  let list;
+  const sorted=[...notificationsData].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  if(!currentUser){list=[];}
   else if(currentUser.type==='manager'){
-    list=NOTIFS.filter(n=>notifDeptFilter==='all'||n.dept===notifDeptFilter||n.dept==='all');
-    bdgCount=NOTIFS.filter(n=>n.unread).length;
+    list=sorted.filter(n=>notifDeptFilter==='all'||n.dept===notifDeptFilter||n.dept==='all');
   }else{
     const u=uById(currentUser.id);
     const myDepts=userDepts(u);
-    list=NOTIFS.filter(n=>n.dept==='all'||myDepts.includes(n.dept));
-    bdgCount=list.filter(n=>n.unread).length;
+    list=sorted.filter(n=>n.dept==='all'||myDepts.includes(n.dept));
   }
   const listEl=document.getElementById('notif-list');
   if(listEl){
     listEl.innerHTML=list.length?list.map(n=>`
-      <div class="nr ${n.unread?'unread':''}">
-        <div class="nd ${n.dot}"></div>
-        <div><div class="nt">${n.text}</div><div class="ntm">${n.time}</div></div>
+      <div class="nr">
+        <div class="nd ${NOTIF_DOT[n.dept]||'nd-gray'}"></div>
+        <div style="flex:1">
+          <div class="nt">${n.text}</div>
+          <div class="ntm">${DL[n.dept]||'كل الأقسام'} · ${fmtNotifTime(n.createdAt)}</div>
+        </div>
+        <button class="btn btn-sm btn-icon btn-danger nf-del" onclick="deleteNotification('${n.id}')" title="حذف الإشعار"><i class="ti ti-x"></i></button>
       </div>`).join('') : empty('لا توجد إشعارات لقسمك حالياً');
   }
   const bdg=document.getElementById('notif-bdg');
-  if(bdg)bdg.textContent=bdgCount;
+  if(bdg)bdg.textContent=list.length;
+}
+
+async function addNotification(){
+  const text=document.getElementById('notif-text-in').value.trim();
+  if(!text){toast('يرجى كتابة نص الإشعار','warn');return;}
+  const dept=document.getElementById('notif-dept-in').value;
+  try{
+    await NOTIFS_COL.add({text,dept,createdAt:new Date().toISOString()});
+    document.getElementById('notif-text-in').value='';
+    toast('تم إرسال الإشعار بنجاح ✓','success');
+  }catch(err){toast('فشل الإرسال: '+err.message,'error');}
+}
+
+function deleteNotification(id){
+  const n=notificationsData.find(x=>x.id===id);if(!n)return;
+  showConfirm('حذف الإشعار',`هل تريد حذف هذا الإشعار؟<br><span style="font-size:12.5px">"${n.text}"</span>`,'danger','ti-trash',async ()=>{
+    try{
+      await NOTIFS_COL.doc(id).delete();
+      toast('تم حذف الإشعار','warn');
+    }catch(err){toast('فشل الحذف: '+err.message,'error');}
+  },'حذف');
 }
 
 /* ══════════════ MODAL: TASK (manager only) ══════════════ */
@@ -2260,8 +2283,35 @@ function askDelUser(id){
   );
 }
 
-/* ══════════════ MODAL helpers ══════════════ */
-function openModal(id){document.getElementById(id).classList.add('open');}
+/* ══════════════ DANGER ZONE: reset all data ══════════════ */
+function askResetAllData(){
+  showConfirm(
+    'حذف جميع البيانات',
+    'سيتم حذف <strong>جميع المستخدمين، المهام، الموردين، ومطابقات الموردين</strong> نهائياً ولا يمكن التراجع عن هذا الإجراء.<br>سيبقى حساب المدير المالي (اسمك وكلمة مرورك) كما هو.<br><br>هل أنت متأكد من المتابعة؟',
+    'danger','ti-alert-triangle',
+    resetAllData,
+    'حذف كل شيء'
+  );
+}
+
+async function resetAllData(){
+  try{
+    const cols=[USERS_COL,TASKS_COL,SUPPLIERS_COL,RECON_COL,NOTIFS_COL];
+    for(const col of cols){
+      const snap=await col.get();
+      const docs=snap.docs;
+      for(let i=0;i<docs.length;i+=400){
+        const batch=db.batch();
+        docs.slice(i,i+400).forEach(d=>batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
+    currentSample=[];
+    toast('تم حذف جميع البيانات — النظام جاهز للبدء من جديد ✓','success');
+  }catch(err){toast('فشل الحذف: '+err.message,'error');}
+}
+
+
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 

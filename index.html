@@ -526,6 +526,20 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     <!-- USERS (manager) -->
     <div class="page" id="page-users">
       <div class="ph"><h1>إدارة المستخدمين</h1><p>إضافة وتعديل وحذف المحاسبين وضبط صلاحياتهم وكلمات مرورهم</p></div>
+
+      <div class="card">
+        <div class="ch"><h2><i class="ti ti-link"></i>رابط النظام</h2></div>
+        <div style="padding:1.25rem 1.5rem">
+          <p style="font-size:13px;color:var(--ts);margin-bottom:.75rem;line-height:1.8">
+            أدخل الرابط الذي رفعت عليه هذا النظام (بعد نشره على الإنترنت). سيُستخدم هذا الرابط تلقائياً عند إنشاء رسائل دعوة المحاسبين للدخول.
+          </p>
+          <div class="fr">
+            <div class="fg" style="margin-bottom:0"><input id="system-url-in" placeholder="https://example.com/financial_manager.html"/></div>
+            <button class="btn btn-primary" onclick="saveSystemUrl()" style="height:42px">حفظ الرابط</button>
+          </div>
+        </div>
+      </div>
+
       <div class="users-grid" id="users-grid"></div>
 
       <div class="card" style="border-color:#F5C0C0;margin-top:1.5rem">
@@ -707,6 +721,28 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     <div class="mf">
       <button class="btn" onclick="closeModal('password-modal')">إلغاء</button>
       <button class="btn btn-primary" onclick="attemptLogin()"><i class="ti ti-login"></i>دخول</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: INVITE MESSAGE ══ -->
+<div class="modal-bg" id="invite-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-hd">
+      <h2><i class="ti ti-send"></i>رسالة دخول — <span id="inv-user-name"></span></h2>
+      <button class="mc" onclick="closeModal('invite-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="fg">
+      <label>نص الرسالة (يمكن تعديله قبل الإرسال)</label>
+      <textarea id="inv-text" style="min-height:220px;font-family:var(--font);direction:rtl"></textarea>
+    </div>
+    <div id="inv-no-url-hint" class="info-alert" style="display:none">
+      <i class="ti ti-info-circle"></i>لم تُحدّد رابط النظام بعد — اذهب لأعلى هذه الصفحة وأدخل رابط النظام حتى يُضاف تلقائياً للرسالة.
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('invite-modal')">إغلاق</button>
+      <button class="btn" onclick="openEmailInvite()"><i class="ti ti-mail"></i>فتح بالبريد الإلكتروني</button>
+      <button class="btn btn-primary" onclick="copyInviteText()"><i class="ti ti-copy"></i>نسخ النص</button>
     </div>
   </div>
 </div>
@@ -934,6 +970,7 @@ const RC={manager:'tag-mgr',accountant:'tag-acc',viewer:'tag-view'};
 /* ══ STATE (synced from Firestore) ══ */
 let mgrName='م. أحمد رضا';
 let mgrPassword='admin123';
+let systemUrl='';
 let users=[];
 let tasks=[];
 let suppliers=[];
@@ -983,7 +1020,7 @@ async function init(){
   try{
     await seedIfNeeded();
     const mgrDoc=await SETTINGS_DOC.get();
-    if(mgrDoc.exists){const d=mgrDoc.data();mgrName=d.name||mgrName;mgrPassword=d.password||mgrPassword;}
+    if(mgrDoc.exists){const d=mgrDoc.data();mgrName=d.name||mgrName;mgrPassword=d.password||mgrPassword;systemUrl=d.systemUrl||'';}
     const usersSnap=await USERS_COL.get();
     users=usersSnap.docs.map(d=>({id:d.id,...d.data()}));
     const tasksSnap=await TASKS_COL.get();
@@ -1037,6 +1074,9 @@ async function init(){
       const d=snap.data();
       mgrName=d.name||mgrName;
       mgrPassword=d.password||mgrPassword;
+      systemUrl=d.systemUrl||'';
+      const urlInput=document.getElementById('system-url-in');
+      if(urlInput&&document.activeElement!==urlInput)urlInput.value=systemUrl;
       renderAll();
     }
   });
@@ -1968,6 +2008,8 @@ function renderDepts(){
 
 /* ══════════════ USERS (manager) ══════════════ */
 function renderUsers(){
+  const urlInput=document.getElementById('system-url-in');
+  if(urlInput&&document.activeElement!==urlInput)urlInput.value=systemUrl;
   if(!users.length){document.getElementById('users-grid').innerHTML=empty('لا يوجد مستخدمون — أضف محاسباً جديداً');return;}
   let h='';
   users.forEach(u=>{
@@ -1993,6 +2035,7 @@ function renderUsers(){
         <button class="btn btn-sm btn-icon" onclick="openEditUser('${u.id}')" title="تعديل بيانات المستخدم"><i class="ti ti-pencil"></i></button>
         <button class="btn btn-sm btn-icon btn-danger" onclick="askDelUser('${u.id}')" title="حذف المستخدم"><i class="ti ti-trash"></i></button>
       </div>
+      <button class="btn btn-sm btn-primary" style="width:100%" onclick="openInviteMessage('${u.id}')"><i class="ti ti-send"></i>رسالة دخول للنظام</button>
     </div>`;
   });
   document.getElementById('users-grid').innerHTML=h;
@@ -2253,6 +2296,71 @@ function openEditUser(id){
   document.getElementById('u-pwd-hint').textContent='اتركه فارغاً إذا لا تريد تغيير كلمة المرور الحالية';
   openModal('user-modal');
 }
+
+/* ══════════════ SYSTEM URL & INVITE MESSAGES ══════════════ */
+async function saveSystemUrl(){
+  const url=document.getElementById('system-url-in').value.trim();
+  try{
+    await SETTINGS_DOC.set({systemUrl:url},{merge:true});
+    toast('تم حفظ رابط النظام بنجاح ✓','success');
+  }catch(err){toast('فشل الحفظ: '+err.message,'error');}
+}
+
+function buildInviteText(u){
+  const link=systemUrl||'[رابط النظام — لم يُحدّد بعد]';
+  const depts=userDepts(u).map(d=>DL[d]).join('، ');
+  return`مرحباً ${u.name} 👋
+
+تمت إضافتك إلى نظام FinanceTrack لمتابعة المهام المالية الخاصة بقسم ${depts}.
+
+🔗 رابط النظام:
+${link}
+
+📝 خطوات تسجيل الدخول:
+1. افتح الرابط أعلاه
+2. اضغط على اسمك "${u.name}" في قائمة "المحاسبون وموظفو الأقسام"
+3. أدخل كلمة المرور التالية:
+   🔑 ${u.password||'(لم تُحدّد كلمة مرور)'}
+
+بعد الدخول ستظهر لك صفحة "مهامي" وتحتوي فقط على المهام المسندة إليك.
+
+💡 يفضل تغيير كلمة المرور بعد أول دخول من خلال الضغط على بطاقة اسمك في الشريط الجانبي ثم "تغيير كلمة المرور".`;
+}
+
+function openInviteMessage(id){
+  const u=uById(id);if(!u)return;
+  document.getElementById('inv-user-name').textContent=u.name;
+  document.getElementById('inv-text').value=buildInviteText(u);
+  document.getElementById('inv-no-url-hint').style.display=systemUrl?'none':'block';
+  openModal('invite-modal');
+}
+
+function copyInviteText(){
+  const ta=document.getElementById('inv-text');
+  ta.select();
+  try{
+    navigator.clipboard.writeText(ta.value).then(()=>{
+      toast('تم نسخ النص — يمكنك لصقه في واتساب أو أي تطبيق','success');
+    }).catch(()=>{
+      document.execCommand('copy');
+      toast('تم نسخ النص','success');
+    });
+  }catch(e){
+    document.execCommand('copy');
+    toast('تم نسخ النص','success');
+  }
+}
+
+function openEmailInvite(){
+  const name=document.getElementById('inv-user-name').textContent;
+  const u=users.find(x=>x.name===name);
+  const body=document.getElementById('inv-text').value;
+  const email=u?u.email:'';
+  const subject=encodeURIComponent('بيانات الدخول إلى نظام FinanceTrack');
+  const url=`mailto:${email}?subject=${subject}&body=${encodeURIComponent(body)}`;
+  window.open(url,'_blank');
+}
+
 
 async function saveUser(){
   const name=document.getElementById('u-name').value.trim();

@@ -813,11 +813,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     </div>
     </div>
     <div class="fg">
-      <label class="dept-check" style="text-transform:none;font-size:13.5px">
-        <input type="checkbox" id="t-notify-email"/>
-        <i class="ti ti-mail"></i>إرسال إشعار بالبريد الإلكتروني للمحاسب بعد الحفظ
+      <label class="dept-check" style="text-transform:none;font-size:13.5px;align-items:flex-start;gap:8px;line-height:1.6">
+        <input type="checkbox" id="t-notify-email" style="margin-top:3px;flex-shrink:0"/>
+        <span><i class="ti ti-mail"></i> إرسال إشعار بالبريد الإلكتروني للمحاسب بعد الحفظ</span>
       </label>
-      <div class="hint" id="email-usage-hint"></div>
+      <div class="hint" id="email-usage-hint" style="margin-top:8px;line-height:1.7"></div>
     </div>
     <div class="mf">
       <button class="btn" onclick="closeModal('task-modal')">إلغاء</button>

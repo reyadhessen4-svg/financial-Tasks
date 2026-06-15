@@ -262,6 +262,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
 .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(61,111,240,.1);background:var(--bg-card)}
 .fg textarea{min-height:80px;resize:vertical}
 .fg .hint{font-size:11px;color:var(--th);margin-top:4px;font-weight:400;text-transform:none;letter-spacing:0}
+.dept-check-group{display:flex;gap:14px;flex-wrap:wrap;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--r-md);background:var(--bg-page)}
+.dept-check{display:flex;align-items:center;gap:6px;font-weight:400;text-transform:none;font-size:13.5px;cursor:pointer;color:var(--tp)}
+.dept-check input{width:auto;padding:0;border:none;background:transparent;box-shadow:none;accent-color:var(--accent)}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .mf{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--bd)}
 .info-alert{background:var(--accent-l);border:1px solid #C5D8FC;border-radius:var(--r-md);padding:10px 14px;font-size:13px;color:var(--accent-d);display:flex;align-items:center;gap:8px;margin-bottom:1rem}
@@ -628,10 +631,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
       </div>
     </div>
 
-    <!-- NOTIFICATIONS (shared) -->
+    <!-- NOTIFICATIONS (shared, filtered by department) -->
     <div class="page" id="page-notifs">
-      <div class="ph"><h1>الإشعارات</h1><p>تنبيهات المهام والنشاط الأخير</p></div>
-      <div class="card"><div id="notif-list"></div></div>
+      <div class="ph"><h1>الإشعارات</h1><p>تنبيهات المهام والنشاط الأخير الخاصة بقسمك</p></div>
+      <div class="card">
+        <div class="tab-bar nav-manager-only" id="notif-dept-tabs">
+          <button class="tab active" onclick="fnotifs('all',this)">الكل</button>
+          <button class="tab" onclick="fnotifs('suppliers',this)"><i class="ti ti-truck" style="font-size:13px"></i>الموردون</button>
+          <button class="tab" onclick="fnotifs('customers',this)"><i class="ti ti-users" style="font-size:13px"></i>العملاء</button>
+          <button class="tab" onclick="fnotifs('current',this)"><i class="ti ti-credit-card" style="font-size:13px"></i>الحسابات الجارية</button>
+        </div>
+        <div id="notif-list"></div>
+      </div>
     </div>
 
   </div>
@@ -775,14 +786,15 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
       <div class="fg"><label>الاسم الكامل</label><input id="u-name" placeholder="الاسم الثلاثي"/></div>
       <div class="fg"><label>البريد الإلكتروني</label><input id="u-email" placeholder="user@company.com"/></div>
     </div>
-    <div class="fr">
-      <div class="fg"><label>القسم</label>
-        <select id="u-dept">
-          <option value="suppliers">قسم الموردين</option>
-          <option value="customers">قسم العملاء</option>
-          <option value="current">الحسابات الجارية</option>
-        </select>
+    <div class="fg">
+      <label>الأقسام <span style="font-size:10px;color:var(--th);font-weight:400;text-transform:none">(يمكن اختيار أكثر من قسم)</span></label>
+      <div class="dept-check-group">
+        <label class="dept-check"><input type="checkbox" id="u-dept-suppliers" value="suppliers"/><i class="ti ti-truck"></i>الموردون</label>
+        <label class="dept-check"><input type="checkbox" id="u-dept-customers" value="customers"/><i class="ti ti-users"></i>العملاء</label>
+        <label class="dept-check"><input type="checkbox" id="u-dept-current" value="current"/><i class="ti ti-credit-card"></i>الحسابات الجارية</label>
       </div>
+    </div>
+    <div class="fr">
       <div class="fg"><label>الصلاحية</label>
         <select id="u-role">
           <option value="accountant">محاسب</option>
@@ -898,6 +910,15 @@ let pendingLogin=null;  /* {type, id} awaiting password */
 function ini(n){const p=(n||'').trim().split(' ');return p.length>=2?p[0][0]+'.'+p[1][0]:(p[0]||'؟').slice(0,2)}
 function avc(id){let h=0;const s=String(id);for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return AVC[Math.abs(h)%AVC.length]}
 function uById(id){return users.find(u=>u.id===id)}
+function userDepts(u){
+  if(!u)return[];
+  if(Array.isArray(u.depts)&&u.depts.length)return u.depts;
+  return u.dept?[u.dept]:[];
+}
+function userDeptsLabel(u){
+  const d=userDepts(u);
+  return d.length?d.map(x=>DL[x]||x).join('، '):'—';
+}
 function tById(id){return tasks.find(t=>t.id===id)}
 function empty(msg='لا توجد بيانات'){return`<div class="empty"><i class="ti ti-mood-empty"></i><p>${msg}</p></div>`}
 
@@ -910,12 +931,12 @@ async function seedIfNeeded(){
   const usersSnap=await USERS_COL.get();
   if(usersSnap.empty){
     const defUsers={
-      u1:{name:'علي محمود',email:'ali@co.com',dept:'suppliers',role:'manager',password:'123456'},
-      u2:{name:'سارة خالد',email:'sara@co.com',dept:'suppliers',role:'accountant',password:'123456'},
-      u3:{name:'منى أحمد',email:'mona@co.com',dept:'customers',role:'manager',password:'123456'},
-      u4:{name:'كريم يوسف',email:'karim@co.com',dept:'customers',role:'accountant',password:'123456'},
-      u5:{name:'خالد سامي',email:'khaled@co.com',dept:'current',role:'manager',password:'123456'},
-      u6:{name:'نورا حسن',email:'nora@co.com',dept:'current',role:'accountant',password:'123456'},
+      u1:{name:'علي محمود',email:'ali@co.com',depts:['suppliers'],dept:'suppliers',role:'manager',password:'123456'},
+      u2:{name:'سارة خالد',email:'sara@co.com',depts:['suppliers','current'],dept:'suppliers',role:'accountant',password:'123456'},
+      u3:{name:'منى أحمد',email:'mona@co.com',depts:['customers'],dept:'customers',role:'manager',password:'123456'},
+      u4:{name:'كريم يوسف',email:'karim@co.com',depts:['customers'],dept:'customers',role:'accountant',password:'123456'},
+      u5:{name:'خالد سامي',email:'khaled@co.com',depts:['current'],dept:'current',role:'manager',password:'123456'},
+      u6:{name:'نورا حسن',email:'nora@co.com',depts:['current','customers'],dept:'current',role:'accountant',password:'123456'},
     };
     for(const id in defUsers) await USERS_COL.doc(id).set(defUsers[id]);
   }
@@ -1034,7 +1055,7 @@ function renderAll(){
   }else{
     renderMyTasks();
     const u=uById(currentUser.id);
-    if(u&&u.dept==='suppliers')renderMyRecon();
+    if(u&&userDepts(u).includes('suppliers'))renderMyRecon();
   }
   renderNotifs();
 }
@@ -1045,7 +1066,7 @@ function initLogin(){
   document.getElementById('login-users-grid').innerHTML=users.map(u=>`
     <div class="login-uc" onclick="openLoginPwd('user','${u.id}')">
       <div class="av ${avc(u.id)}">${ini(u.name)}</div>
-      <div><div class="lun">${u.name}</div><div class="lud">${DL[u.dept]} · ${RL[u.role]}</div></div>
+      <div><div class="lun">${u.name}</div><div class="lud">${userDeptsLabel(u)} · ${RL[u.role]}</div></div>
     </div>`).join('');
 }
 
@@ -1061,7 +1082,7 @@ function openLoginPwd(type,id){
   }else{
     const u=uById(id);if(!u)return;
     document.getElementById('pwd-name').textContent=u.name;
-    document.getElementById('pwd-role').textContent=DL[u.dept]+' · '+RL[u.role];
+    document.getElementById('pwd-role').textContent=userDeptsLabel(u)+' · '+RL[u.role];
     document.getElementById('pwd-av').textContent=ini(u.name);
     document.getElementById('pwd-av').className='av '+avc(u.id);
   }
@@ -1125,12 +1146,12 @@ function applyRole(){
     const u=uById(currentUser.id);
     if(!u){logout();return;}
     document.getElementById('prof-name').textContent=u.name;
-    document.getElementById('prof-role').textContent=DL[u.dept]+' · '+RL[u.role];
+    document.getElementById('prof-role').textContent=userDeptsLabel(u)+' · '+RL[u.role];
     document.getElementById('prof-av').textContent=ini(u.name);
     chip.onclick=openChangePwd;
     chip.title='اضغط لتغيير كلمة المرور';
     cancelMgrEdit();
-    document.querySelectorAll('.nav-recon-only').forEach(el=>el.style.display=(u.dept==='suppliers')?'':'none');
+    document.querySelectorAll('.nav-recon-only').forEach(el=>el.style.display=userDepts(u).includes('suppliers')?'':'none');
     showPage('mytasks',document.querySelector('.nav-item[data-page="mytasks"]'));
   }
 }
@@ -1248,7 +1269,7 @@ function renderDashboard(){
       <div class="av ${avc(u.id)}">${ini(u.name)}</div>
       <div class="ui">
         <div class="un">${u.name}</div>
-        <div class="uro">${DL[u.dept]} · ${RL[u.role]}</div>
+        <div class="uro">${userDeptsLabel(u)} · ${RL[u.role]}</div>
         <div class="uprog"><div class="pb"><div class="pf" style="width:${pct}%"></div></div><div class="upct">${pct}%</div></div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
@@ -1328,7 +1349,7 @@ function renderMyTasks(){
   const u=uById(currentUser.id);
   if(!u)return;
   document.getElementById('my-greet-name').textContent=u.name;
-  document.getElementById('my-greet-dept').textContent=DL[u.dept];
+  document.getElementById('my-greet-dept').textContent=userDeptsLabel(u);
   document.getElementById('my-greet-av').textContent=ini(u.name);
 
   const ut=tasks.filter(t=>t.userId===u.id);
@@ -1664,7 +1685,7 @@ function renderReconciliationPage(){
   if(!currentUser||currentUser.type!=='manager')return;
   renderPendingReconAssignments();
   const sel=document.getElementById('recon-accountant');
-  const supDeptUsers=users.filter(u=>u.dept==='suppliers');
+  const supDeptUsers=users.filter(u=>userDepts(u).includes('suppliers'));
   const prevVal=sel.value;
   sel.innerHTML=supDeptUsers.map(u=>`<option value="${u.id}">${u.name} (${RL[u.role]})</option>`).join('');
   if(supDeptUsers.find(u=>u.id===prevVal))sel.value=prevVal;
@@ -1895,7 +1916,7 @@ function renderDepts(){
           dp=dt.filter(t=>t.status==='pending').length,
           pct=dt.length?Math.round(dd/dt.length*100):0;
     const col=DC[d],colv=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
-    const du=users.filter(u=>u.dept===d);
+    const du=users.filter(u=>userDepts(u).includes(d));
     h+=`<div class="dept-card">
       <div class="dept-card-hd">
         <div class="dept-icon ${col}"><i class="ti ${DI[d]}"></i></div>
@@ -1946,7 +1967,7 @@ function renderUsers(){
       </div>
       <div class="uc-tags">
         <span class="tag ${RC[u.role]}">${RL[u.role]}</span>
-        <span class="tag tag-dept"><i class="ti ${DI[u.dept]}" style="font-size:11px"></i>${DL[u.dept]}</span>
+        ${userDepts(u).map(d=>`<span class="tag tag-dept"><i class="ti ${DI[d]}" style="font-size:11px"></i>${DL[d]}</span>`).join('')}
       </div>
       <div class="uc-stats">
         <div class="ucs"><div class="sv" style="color:var(--accent)">${ut.length}</div><div class="sl">إجمالي</div></div>
@@ -1989,7 +2010,7 @@ function renderReports(){
     th+=`<div class="ur">
       <div style="font-size:14px;font-weight:700;color:var(--th);width:20px">${i+1}</div>
       <div class="av ${avc(u.id)}">${ini(u.name)}</div>
-      <div class="ui"><div class="un">${u.name}</div><div class="uro">${DL[u.dept]}</div>
+      <div class="ui"><div class="un">${u.name}</div><div class="uro">${userDeptsLabel(u)}</div>
         <div class="uprog"><div class="pb"><div class="pf" style="width:${u.pct}%"></div></div><div class="upct">${u.pct}%</div></div>
       </div>
     </div>`;
@@ -2014,20 +2035,49 @@ function renderReports(){
   document.getElementById('rpt-done').innerHTML=dh||empty('لا توجد مهام مكتملة بعد');
 }
 
-/* ══════════════ NOTIFICATIONS (shared, static demo) ══════════════ */
+/* ══════════════ NOTIFICATIONS (filtered by department) ══════════════ */
 const NOTIFS=[
-  {dot:'nd-amber',text:'مهمة "متابعة مديونيات العملاء" موعدها غداً',time:'منذ ساعة',unread:true},
-  {dot:'nd-red',text:'مهمة "تحصيل الشيكات المستحقة" قاربت على الموعد النهائي',time:'منذ 3 ساعات',unread:true},
-  {dot:'nd-green',text:'أكمل علي محمود مهمة "مراجعة فواتير الموردين"',time:'منذ 5 ساعات',unread:false},
-  {dot:'nd-blue',text:'تمت إضافة مهمة جديدة لقسم الموردين',time:'أمس 2:30 م',unread:false},
-  {dot:'nd-green',text:'أتمت نورا حسن تقرير التدفقات النقدية الأسبوعي',time:'أمس 10:00 ص',unread:false},
+  {dot:'nd-amber',text:'مهمة "متابعة مديونيات العملاء" موعدها غداً',time:'منذ ساعة',unread:true,dept:'customers'},
+  {dot:'nd-red',text:'مهمة "تحصيل الشيكات المستحقة" قاربت على الموعد النهائي',time:'منذ 3 ساعات',unread:true,dept:'customers'},
+  {dot:'nd-green',text:'أكمل علي محمود مهمة "مراجعة فواتير الموردين"',time:'منذ 5 ساعات',unread:false,dept:'suppliers'},
+  {dot:'nd-blue',text:'تمت إضافة مهمة جديدة لقسم الموردين',time:'أمس 2:30 م',unread:false,dept:'suppliers'},
+  {dot:'nd-amber',text:'تم تكليفك بمطابقة عينة جديدة من الموردين',time:'أمس 11:00 ص',unread:true,dept:'suppliers'},
+  {dot:'nd-green',text:'أتمت نورا حسن تقرير التدفقات النقدية الأسبوعي',time:'أمس 10:00 ص',unread:false,dept:'current'},
+  {dot:'nd-amber',text:'مهمة "تسوية الحساب الجاري – البنك الأهلي" موعدها قريب',time:'منذ يومين',unread:false,dept:'current'},
+  {dot:'nd-blue',text:'تم تحديث بيانات النظام والصلاحيات',time:'منذ 3 أيام',unread:false,dept:'all'},
 ];
+
+let notifDeptFilter='all';
+
+function fnotifs(dept,el){
+  notifDeptFilter=dept;
+  document.querySelectorAll('#notif-dept-tabs .tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderNotifs();
+}
+
 function renderNotifs(){
-  document.getElementById('notif-list').innerHTML=NOTIFS.map(n=>`
-    <div class="nr ${n.unread?'unread':''}">
-      <div class="nd ${n.dot}"></div>
-      <div><div class="nt">${n.text}</div><div class="ntm">${n.time}</div></div>
-    </div>`).join('');
+  let list,bdgCount;
+  if(!currentUser){list=[];bdgCount=0;}
+  else if(currentUser.type==='manager'){
+    list=NOTIFS.filter(n=>notifDeptFilter==='all'||n.dept===notifDeptFilter||n.dept==='all');
+    bdgCount=NOTIFS.filter(n=>n.unread).length;
+  }else{
+    const u=uById(currentUser.id);
+    const myDepts=userDepts(u);
+    list=NOTIFS.filter(n=>n.dept==='all'||myDepts.includes(n.dept));
+    bdgCount=list.filter(n=>n.unread).length;
+  }
+  const listEl=document.getElementById('notif-list');
+  if(listEl){
+    listEl.innerHTML=list.length?list.map(n=>`
+      <div class="nr ${n.unread?'unread':''}">
+        <div class="nd ${n.dot}"></div>
+        <div><div class="nt">${n.text}</div><div class="ntm">${n.time}</div></div>
+      </div>`).join('') : empty('لا توجد إشعارات لقسمك حالياً');
+  }
+  const bdg=document.getElementById('notif-bdg');
+  if(bdg)bdg.textContent=bdgCount;
 }
 
 /* ══════════════ MODAL: TASK (manager only) ══════════════ */
@@ -2117,7 +2167,7 @@ function askDelTask(id){
 function updateTUsers(){
   const dept=document.getElementById('t-dept').value;
   const sel=document.getElementById('t-user');
-  const du=users.filter(u=>u.dept===dept);
+  const du=users.filter(u=>userDepts(u).includes(dept));
   sel.innerHTML=du.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
   if(!du.length)sel.innerHTML='<option value="">— لا يوجد محاسبون في هذا القسم —</option>';
 }
@@ -2125,7 +2175,7 @@ function updateTUsers(){
 function openAssign(uid){
   const u=uById(uid);if(!u)return;
   openAddTask();
-  document.getElementById('t-dept').value=u.dept;
+  document.getElementById('t-dept').value=userDepts(u)[0]||'suppliers';
   updateTUsers();
   document.getElementById('t-user').value=uid;
 }
@@ -2137,7 +2187,9 @@ function openAddUser(){
   document.getElementById('u-id').value='';
   document.getElementById('u-name').value='';
   document.getElementById('u-email').value='';
-  document.getElementById('u-dept').value='suppliers';
+  document.getElementById('u-dept-suppliers').checked=true;
+  document.getElementById('u-dept-customers').checked=false;
+  document.getElementById('u-dept-current').checked=false;
   document.getElementById('u-role').value='accountant';
   document.getElementById('u-pwd').value='';
   document.getElementById('u-pwd').placeholder='كلمة المرور لتسجيل الدخول';
@@ -2152,7 +2204,10 @@ function openEditUser(id){
   document.getElementById('u-id').value=u.id;
   document.getElementById('u-name').value=u.name;
   document.getElementById('u-email').value=u.email;
-  document.getElementById('u-dept').value=u.dept;
+  const depts=userDepts(u);
+  document.getElementById('u-dept-suppliers').checked=depts.includes('suppliers');
+  document.getElementById('u-dept-customers').checked=depts.includes('customers');
+  document.getElementById('u-dept-current').checked=depts.includes('current');
   document.getElementById('u-role').value=u.role;
   document.getElementById('u-pwd').value='';
   document.getElementById('u-pwd').placeholder='اتركه فارغاً للحفاظ على كلمة المرور الحالية';
@@ -2164,19 +2219,23 @@ async function saveUser(){
   const name=document.getElementById('u-name').value.trim();
   const email=document.getElementById('u-email').value.trim();
   if(!name||!email){toast('يرجى تعبئة الاسم والبريد الإلكتروني','warn');return;}
-  const dept=document.getElementById('u-dept').value;
+  const depts=[];
+  if(document.getElementById('u-dept-suppliers').checked)depts.push('suppliers');
+  if(document.getElementById('u-dept-customers').checked)depts.push('customers');
+  if(document.getElementById('u-dept-current').checked)depts.push('current');
+  if(!depts.length){toast('يرجى اختيار قسم واحد على الأقل','warn');return;}
   const role=document.getElementById('u-role').value;
   const pwd=document.getElementById('u-pwd').value.trim();
   const eid=document.getElementById('u-id').value;
   try{
     if(eid){
-      const data={name,email,dept,role};
+      const data={name,email,depts,dept:depts[0],role};
       if(pwd)data.password=pwd;
       await USERS_COL.doc(eid).update(data);
       toast(`تم تحديث بيانات ${name} ✓`,'success');
     }else{
       if(!pwd){toast('يرجى تحديد كلمة مرور للمستخدم الجديد','warn');return;}
-      await USERS_COL.add({name,email,dept,role,password:pwd});
+      await USERS_COL.add({name,email,depts,dept:depts[0],role,password:pwd});
       toast(`تمت إضافة ${name} بنجاح ✓`,'success');
     }
     closeModal('user-modal');

@@ -336,6 +336,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
 .mini-stat{flex:1;background:var(--bg-page);border-radius:var(--r-sm);padding:8px 10px}
 .mini-stat .ml{font-size:11px;color:var(--ts)}
 .mini-stat .mv{font-size:15px;font-weight:700;margin-top:2px}
+.sample-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--bg-page);border-radius:var(--r-md);margin-bottom:6px;font-size:13.5px}
+.sample-row .sr-name{font-weight:600;display:flex;align-items:center;gap:8px}
+.sample-row .sr-name i{color:var(--accent);font-size:15px}
 
 /* ── Loading ── */
 .loading-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:2rem;text-align:center}
@@ -556,7 +559,27 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
               <div class="fg"><label>المحاسب المكلف</label><select id="recon-accountant"></select></div>
             </div>
             <div id="recon-sample-info" style="font-size:12.5px;color:var(--ts);margin-bottom:.9rem"></div>
-            <button class="btn btn-primary" onclick="assignRandomSample()" style="width:100%"><i class="ti ti-send"></i>اختيار العينة وتكليف المحاسب</button>
+            <button class="btn btn-primary" onclick="generateRandomSample()" style="width:100%"><i class="ti ti-dice"></i>اختيار عينة عشوائية</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sample preview / edit before assigning -->
+      <div class="card" id="sample-preview-card" style="display:none">
+        <div class="ch">
+          <h2><i class="ti ti-list-details"></i>العينة المختارة (راجعها قبل التكليف)</h2>
+          <span id="sample-count-bdg" class="pill pill-review"></span>
+        </div>
+        <div style="padding:1rem 1.5rem">
+          <div id="sample-list"></div>
+          <div class="fr" style="margin-top:.75rem;align-items:flex-end">
+            <div class="fg" style="margin-bottom:0"><label>إضافة مورد آخر للعينة</label><select id="sample-add-select"></select></div>
+            <button class="btn" onclick="addToSample()" style="height:42px"><i class="ti ti-plus"></i>إضافة</button>
+          </div>
+          <div class="mf" style="margin-top:1rem">
+            <button class="btn" onclick="clearSample()">إلغاء العينة</button>
+            <button class="btn" onclick="generateRandomSample()"><i class="ti ti-refresh"></i>إعادة الاختيار العشوائي</button>
+            <button class="btn btn-primary" onclick="confirmAssignSample()"><i class="ti ti-send"></i>تكليف المحاسب بهذه العينة</button>
           </div>
         </div>
       </div>
@@ -702,6 +725,33 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
       <button class="btn" onclick="closeModal('task-modal')">إلغاء</button>
       <button class="btn btn-primary" onclick="saveTask()"><i class="ti ti-check"></i><span id="ts-lbl">إسناد المهمة</span></button>
     </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: SUPPLIER ══ -->
+<div class="modal-bg" id="supplier-modal">
+  <div class="modal" style="width:420px">
+    <div class="modal-hd">
+      <h2><i class="ti ti-building-warehouse"></i>تعديل اسم المورد</h2>
+      <button class="mc" onclick="closeModal('supplier-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <input type="hidden" id="sup-id"/>
+    <div class="fg"><label>اسم المورد</label><input id="sup-name" placeholder="اسم المورد"/></div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('supplier-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveSupplier()"><i class="ti ti-check"></i>حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: RECONCILIATION HISTORY ══ -->
+<div class="modal-bg" id="recon-history-modal">
+  <div class="modal" style="width:560px">
+    <div class="modal-hd">
+      <h2><i class="ti ti-history"></i>سجل المطابقات — <span id="rh-supplier-name"></span></h2>
+      <button class="mc" onclick="closeModal('recon-history-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="rh-body"></div>
   </div>
 </div>
 
@@ -1331,6 +1381,59 @@ function lastDoneRecon(supplierId,excludeId){
     .sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||''))[0];
 }
 
+/* ── Manager: full reconciliation history for a supplier ── */
+function openReconHistory(supplierId){
+  const s=sById(supplierId);if(!s)return;
+  document.getElementById('rh-supplier-name').textContent=s.name;
+
+  const all=reconciliations
+    .filter(r=>r.supplierId===supplierId)
+    .sort((a,b)=>(b.completedAt||b.assignedAt||'').localeCompare(a.completedAt||a.assignedAt||''));
+
+  const body=document.getElementById('rh-body');
+  if(!all.length){
+    body.innerHTML=empty('لا توجد أي مطابقات مسجلة لهذا المورد');
+    openModal('recon-history-modal');
+    return;
+  }
+
+  body.innerHTML=all.map(r=>{
+    const acc=uById(r.accountantId);
+    if(r.status==='done'){
+      return`<div class="recon-item">
+        <div class="recon-item-head">
+          <div>
+            <div style="font-weight:700;font-size:14px">تمت في ${r.completedAt}</div>
+            <div class="lk-note"><i class="ti ti-user"></i>المحاسب: ${acc?acc.name:'—'} · تاريخ التكليف: ${r.assignedAt||'—'}</div>
+          </div>
+          <span class="pill pill-done"><i class="ti ti-circle-check"></i>مكتملة</span>
+        </div>
+        <div class="fr">
+          <div class="mini-stat"><div class="ml">رصيد الشركة</div><div class="mv">${fmtMoney(r.companyBalance)}</div></div>
+          <div class="mini-stat"><div class="ml">رصيد المورد</div><div class="mv">${fmtMoney(r.supplierBalance)}</div></div>
+        </div>
+        <div class="mini-stat" style="margin-top:8px">
+          <div class="ml">الفارق</div>
+          <div class="mv" style="color:${r.difference===0?'var(--green)':'var(--red)'}">${fmtMoney(r.difference)}${r.difference===0?' (متطابق)':''}</div>
+        </div>
+        ${r.reasonDiff?`<div style="margin-top:8px"><div class="ml" style="font-size:11px;color:var(--ts)">سبب الفرق</div><div style="font-size:13px;margin-top:2px">${r.reasonDiff}</div></div>`:''}
+        ${r.actionsTaken?`<div style="margin-top:8px"><div class="ml" style="font-size:11px;color:var(--ts)">الإجراء المتخذ لإنهاء المطابقة</div><div style="font-size:13px;margin-top:2px">${r.actionsTaken}</div></div>`:''}
+      </div>`;
+    }
+    return`<div class="recon-item">
+      <div class="recon-item-head">
+        <div>
+          <div style="font-weight:700;font-size:14px">مطابقة قيد التنفيذ</div>
+          <div class="lk-note"><i class="ti ti-user"></i>المحاسب: ${acc?acc.name:'—'} · تاريخ التكليف: ${r.assignedAt||'—'}</div>
+        </div>
+        <span class="pill pill-review"><i class="ti ti-clock-hour-4"></i>قيد التنفيذ</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  openModal('recon-history-modal');
+}
+
 /* ── Manager: upload supplier file ── */
 async function handleSupplierFile(file){
   if(!file)return;
@@ -1377,19 +1480,113 @@ async function handleSupplierFile(file){
   }
 }
 
-/* ── Manager: pick random sample & assign ── */
-async function assignRandomSample(){
+/* ── Manager: edit / delete supplier ── */
+function sById(id){return suppliers.find(s=>s.id===id)}
+
+function openEditSupplier(id){
+  const s=sById(id);if(!s)return;
+  document.getElementById('sup-id').value=s.id;
+  document.getElementById('sup-name').value=s.name;
+  openModal('supplier-modal');
+}
+
+async function saveSupplier(){
+  const id=document.getElementById('sup-id').value;
+  const name=document.getElementById('sup-name').value.trim();
+  if(!name){toast('يرجى إدخال اسم المورد','warn');return;}
+  try{
+    await SUPPLIERS_COL.doc(id).update({name});
+    closeModal('supplier-modal');
+    toast('تم تحديث اسم المورد بنجاح ✓','success');
+  }catch(err){toast('فشل الحفظ: '+err.message,'error');}
+}
+
+function askDelSupplier(id){
+  const s=sById(id);if(!s)return;
+  const pending=reconciliations.filter(r=>r.supplierId===id&&r.status==='pending');
+  const done=reconciliations.filter(r=>r.supplierId===id&&r.status==='done');
+  let msg=`هل تريد حذف المورد "<strong>${s.name}</strong>" نهائياً؟`;
+  if(pending.length)msg+=`<br>سيتم أيضاً حذف <strong>${pending.length}</strong> مطابقة قيد التنفيذ لهذا المورد.`;
+  if(done.length)msg+=`<br>ستبقى <strong>${done.length}</strong> مطابقة مكتملة سابقة كسجل تاريخي.`;
+  showConfirm('حذف المورد',msg,'danger','ti-trash',async ()=>{
+    try{
+      const batch=db.batch();
+      pending.forEach(r=>batch.delete(RECON_COL.doc(r.id)));
+      batch.delete(SUPPLIERS_COL.doc(id));
+      await batch.commit();
+      toast(`تم حذف المورد "${s.name}"`,'warn');
+    }catch(err){toast('فشل الحذف: '+err.message,'error');}
+  });
+}
+
+/* ── Manager: pick random sample, allow editing, then assign ── */
+let currentSample=[]; /* array of {id,name} */
+
+function generateRandomSample(){
   const pct=parseFloat(document.getElementById('recon-pct').value)||20;
-  const accId=document.getElementById('recon-accountant').value;
-  if(!accId){toast('اختر المحاسب المكلف من قسم الموردين أولاً','warn');return;}
   if(!suppliers.length){toast('لا يوجد موردون محمّلون — قم برفع الملف أولاً','warn');return;}
   const n=Math.max(1,Math.round(suppliers.length*pct/100));
   const shuffled=[...suppliers].sort(()=>Math.random()-0.5);
-  const sample=shuffled.slice(0,n);
+  currentSample=shuffled.slice(0,n).map(s=>({id:s.id,name:s.name}));
+  renderSamplePreview();
+}
+
+function renderSamplePreview(){
+  const card=document.getElementById('sample-preview-card');
+  if(!currentSample.length){
+    card.style.display='none';
+    return;
+  }
+  card.style.display='block';
+  document.getElementById('sample-count-bdg').textContent=`${currentSample.length} مورد`;
+
+  document.getElementById('sample-list').innerHTML=currentSample.map(s=>`
+    <div class="sample-row">
+      <div class="sr-name"><i class="ti ti-building-warehouse"></i>${s.name}</div>
+      <button class="btn btn-sm btn-icon btn-danger" onclick="removeFromSample('${s.id}')" title="إزالة من العينة"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+
+  const sampleIds=new Set(currentSample.map(s=>s.id));
+  const remaining=suppliers.filter(s=>!sampleIds.has(s.id));
+  const addSel=document.getElementById('sample-add-select');
+  if(remaining.length){
+    addSel.innerHTML=remaining.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    addSel.disabled=false;
+  }else{
+    addSel.innerHTML='<option value="">— تم اختيار جميع الموردين —</option>';
+    addSel.disabled=true;
+  }
+}
+
+function removeFromSample(id){
+  currentSample=currentSample.filter(s=>s.id!==id);
+  renderSamplePreview();
+}
+
+function addToSample(){
+  const sel=document.getElementById('sample-add-select');
+  const id=sel.value;
+  if(!id)return;
+  const s=sById(id);if(!s)return;
+  if(!currentSample.find(x=>x.id===id)){
+    currentSample.push({id:s.id,name:s.name});
+    renderSamplePreview();
+  }
+}
+
+function clearSample(){
+  currentSample=[];
+  renderSamplePreview();
+}
+
+async function confirmAssignSample(){
+  const accId=document.getElementById('recon-accountant').value;
+  if(!accId){toast('اختر المحاسب المكلف من قسم الموردين أولاً','warn');return;}
+  if(!currentSample.length){toast('العينة فارغة — أضف موردين أولاً','warn');return;}
   const today=new Date().toISOString().slice(0,10);
   try{
-    for(let i=0;i<sample.length;i+=400){
-      const chunk=sample.slice(i,i+400);
+    for(let i=0;i<currentSample.length;i+=400){
+      const chunk=currentSample.slice(i,i+400);
       const batch=db.batch();
       chunk.forEach(s=>{
         const ref=RECON_COL.doc();
@@ -1403,7 +1600,10 @@ async function assignRandomSample(){
       await batch.commit();
     }
     const accName=(uById(accId)||{}).name||'المحاسب';
-    toast(`تم اختيار ${n} مورد (${pct}%) وتكليف ${accName} بمطابقة أرصدتهم`,'success');
+    const count=currentSample.length;
+    currentSample=[];
+    renderSamplePreview();
+    toast(`تم تكليف ${accName} بمطابقة ${count} مورد`,'success');
   }catch(err){toast('فشل التكليف: '+err.message,'error');}
 }
 
@@ -1431,7 +1631,7 @@ function renderReconciliationPage(){
     tbl.innerHTML='<tr><td style="padding:2rem;text-align:center;color:var(--th)">لا يوجد موردون — قم برفع ملف الموردين أولاً</td></tr>';
     return;
   }
-  let h='<tr><th>اسم المورد</th><th>آخر مطابقة</th><th>رصيد الشركة (آخر مطابقة)</th><th>الفارق (آخر مطابقة)</th><th>الحالة الحالية</th></tr>';
+  let h='<tr><th>اسم المورد</th><th>آخر مطابقة</th><th>رصيد الشركة (آخر مطابقة)</th><th>الفارق (آخر مطابقة)</th><th>الحالة الحالية</th><th>إجراءات</th></tr>';
   suppliers.forEach(s=>{
     const last=lastDoneRecon(s.id);
     const pending=reconciliations.find(r=>r.supplierId===s.id&&r.status==='pending');
@@ -1441,9 +1641,22 @@ function renderReconciliationPage(){
       <td>${last?fmtMoney(last.companyBalance):'—'}</td>
       <td style="${last&&last.difference!==0?'color:var(--red);font-weight:600':''}">${last?fmtMoney(last.difference):'—'}</td>
       <td>${pending?`<span class="pill pill-review"><i class="ti ti-clock-hour-4"></i>قيد التنفيذ — ${(uById(pending.accountantId)||{}).name||''}</span>`:'<span class="pill pill-pending">لا توجد مطابقة جارية</span>'}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-sm btn-icon" onclick="openReconHistory('${s.id}')" title="سجل المطابقات السابقة"><i class="ti ti-history"></i></button>
+          <button class="btn btn-sm btn-icon" onclick="openEditSupplier('${s.id}')" title="تعديل الاسم"><i class="ti ti-pencil"></i></button>
+          <button class="btn btn-sm btn-icon btn-danger" onclick="askDelSupplier('${s.id}')" title="حذف المورد"><i class="ti ti-trash"></i></button>
+        </div>
+      </td>
     </tr>`;
   });
   tbl.innerHTML=h;
+
+  // Keep the in-progress sample preview in sync if suppliers changed/deleted
+  if(currentSample.length){
+    currentSample=currentSample.filter(s=>suppliers.find(x=>x.id===s.id));
+  }
+  renderSamplePreview();
 }
 
 /* ── Accountant: render my reconciliations ── */

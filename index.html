@@ -741,8 +741,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     </div>
     <div class="mf">
       <button class="btn" onclick="closeModal('invite-modal')">إغلاق</button>
-      <button class="btn" onclick="openEmailInvite()"><i class="ti ti-mail"></i>فتح بالبريد الإلكتروني</button>
-      <button class="btn btn-primary" onclick="copyInviteText()"><i class="ti ti-copy"></i>نسخ النص</button>
+      <button class="btn btn-primary" onclick="openEmailInvite()"><i class="ti ti-send"></i>إرسال بالبريد الآن</button>
+      <button class="btn" onclick="copyInviteText()"><i class="ti ti-copy"></i>نسخ النص (لواتساب مثلاً)</button>
     </div>
   </div>
 </div>
@@ -810,6 +810,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
         <option value="review">تحت المراجعة</option>
         <option value="done">مكتملة</option>
       </select>
+    </div>
+    </div>
+    <div class="fg">
+      <label class="dept-check" style="text-transform:none;font-size:13.5px">
+        <input type="checkbox" id="t-notify-email" checked/>
+        <i class="ti ti-mail"></i>إرسال إشعار بالبريد الإلكتروني للمحاسب بعد الحفظ
+      </label>
     </div>
     <div class="mf">
       <button class="btn" onclick="closeModal('task-modal')">إلغاء</button>
@@ -906,6 +913,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
 <!-- ══ XLSX (for reading supplier files) ══ -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="window.__xlsxErr=true"></script>
 
+<!-- ══ EmailJS (for sending real email notifications) ══ -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" onerror="window.__emailjsErr=true"></script>
+
 <script>
 /* ══ EARLY ERROR HANDLING ══ */
 function showBootError(msg){
@@ -952,6 +962,36 @@ if(window.__fbErr){
   }catch(err){
     showBootError('فشل الاتصال بـ Firebase:<br><span style="font-size:11px;opacity:.8">'+err.message+'</span>');
   }
+}
+
+/* ══ EMAILJS INIT (for real email notifications) ══ */
+const EMAILJS_SERVICE_ID='service_44jbwca';
+const EMAILJS_TEMPLATE_ID='template_7wc4w0i';
+const EMAILJS_PUBLIC_KEY='LOj6-3kdeggOiSc3G';
+let emailjsReady=false;
+if(window.__emailjsErr||typeof emailjs==='undefined'){
+  console.warn('EmailJS SDK failed to load — email notifications will be unavailable.');
+}else{
+  try{
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    emailjsReady=true;
+  }catch(err){
+    console.warn('EmailJS init failed:',err);
+  }
+}
+
+/**
+ * Sends an email via EmailJS. Returns a Promise.
+ * templateParams must match the variables used in the EmailJS template:
+ * {{to_email}}, {{to_name}}, {{subject}}, {{message}}
+ */
+function sendEmailJS(toEmail,toName,subject,message){
+  if(!emailjsReady){
+    return Promise.reject(new Error('خدمة البريد (EmailJS) غير متاحة — تأكد من الاتصال بالإنترنت'));
+  }
+  return emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{
+    to_email:toEmail,to_name:toName,subject:subject,message:message
+  });
 }
 
 /* ══ CONSTANTS ══ */
@@ -1366,6 +1406,7 @@ function renderTasks(){
           ?`<span class="lkd-badge"><i class="ti ti-lock"></i>مكتملة ومقفلة</span>
             <div style="display:flex;gap:4px;margin-top:3px">
               <button class="btn btn-sm btn-warning" onclick="mgrUnlock('${t.id}')"><i class="ti ti-lock-open"></i>فتح القفل</button>
+              <button class="btn btn-sm btn-icon" onclick="sendTaskEmail('${t.id}')" title="إرسال إشعار بالبريد للمحاسب"><i class="ti ti-mail"></i></button>
               <button class="btn btn-sm btn-icon" onclick="openEditTask('${t.id}')" title="تعديل بيانات المهمة"><i class="ti ti-pencil"></i></button>
               <button class="btn btn-sm btn-icon btn-danger" onclick="askDelTask('${t.id}')" title="حذف"><i class="ti ti-trash"></i></button>
             </div>`
@@ -1381,6 +1422,7 @@ function renderTasks(){
             </div>
             <div style="display:flex;gap:4px;margin-top:3px">
               <span class="prio-b ${PC[t.prio]}">${PL[t.prio]}</span>
+              <button class="btn btn-sm btn-icon" onclick="sendTaskEmail('${t.id}')" title="إرسال إشعار بالبريد للمحاسب"><i class="ti ti-mail"></i></button>
               <button class="btn btn-sm btn-icon" onclick="openEditTask('${t.id}')" title="تعديل"><i class="ti ti-pencil"></i></button>
               <button class="btn btn-sm btn-icon btn-danger" onclick="askDelTask('${t.id}')" title="حذف"><i class="ti ti-trash"></i></button>
             </div>`
@@ -2172,6 +2214,7 @@ function openAddTask(){
   document.getElementById('t-dept').value='suppliers';
   document.getElementById('t-prio').value='med';
   document.getElementById('t-recurring').value='none';
+  document.getElementById('t-notify-email').checked=true;
   document.getElementById('t-status-grp').style.display='none';
   const d=new Date();d.setDate(d.getDate()+7);
   document.getElementById('t-due').value=d.toISOString().slice(0,10);
@@ -2190,12 +2233,51 @@ function openEditTask(id){
   document.getElementById('t-prio').value=t.prio;
   document.getElementById('t-due').value=t.due;
   document.getElementById('t-recurring').value=t.recurring||'none';
+  document.getElementById('t-notify-email').checked=false;
   document.getElementById('t-status-grp').style.display='block';
   document.getElementById('t-status').value=t.status;
   updateTUsers();
   document.getElementById('t-user').value=t.userId;
   openModal('task-modal');
 }
+
+/* ══════════════ TASK EMAIL NOTIFICATIONS ══════════════ */
+function buildTaskEmailContent(t,isNew){
+  const u=uById(t.userId);
+  if(!u||!u.email)return null;
+  const link=systemUrl||'[رابط النظام — لم يُحدّد بعد]';
+  const subject=`${isNew?'مهمة جديدة':'تحديث مهمة'} في FinanceTrack: ${t.title}`;
+  const message=`مرحباً ${u.name} 👋
+
+${isNew?'تم تكليفك بمهمة جديدة':'تم تحديث مهمة مسندة إليك'} في نظام FinanceTrack:
+
+📌 العنوان: ${t.title}
+📝 التفاصيل: ${t.desc||'—'}
+🏢 القسم: ${DL[t.dept]}
+⚡ الأولوية: ${PL[t.prio]}
+📅 موعد الاستحقاق: ${t.due}
+📊 الحالة: ${SL[t.status]}
+
+للدخول وتنفيذ المهمة:
+${link}
+
+اضغط على اسمك "${u.name}" في صفحة الدخول وأدخل كلمة مرورك.`;
+  return{to:u.email,toName:u.name,subject,message};
+}
+
+function sendTaskEmail(taskId,taskObj,isNew){
+  const t=taskObj||tById(taskId);
+  if(!t){toast('تعذر العثور على المهمة','error');return;}
+  const u=uById(t.userId);
+  if(!u){toast('هذه المهمة غير مسندة لأي محاسب','warn');return;}
+  if(!u.email){toast(`لا يوجد بريد إلكتروني مسجل لـ ${u.name} — أضفه من شاشة المستخدمين`,'warn');return;}
+  const c=buildTaskEmailContent(t,!!isNew);
+  toast(`جارٍ إرسال الإشعار إلى ${u.name}...`,'success');
+  sendEmailJS(c.to,c.toName,c.subject,c.message)
+    .then(()=>toast(`تم إرسال الإشعار بالبريد إلى ${u.name} ✓`,'success'))
+    .catch(err=>toast('فشل إرسال البريد: '+(err&&(err.text||err.message)||err),'error'));
+}
+
 
 async function saveTask(){
   const title=document.getElementById('t-title').value.trim();
@@ -2207,13 +2289,16 @@ async function saveTask(){
   const due=document.getElementById('t-due').value||'2026-07-01';
   const desc=document.getElementById('t-desc').value.trim();
   const recurring=document.getElementById('t-recurring').value;
+  const notifyEmail=document.getElementById('t-notify-email').checked;
   try{
+    let taskForEmail=null,isNewTask=false;
     if(eid){
       const oldTask=tById(eid);
       const wasDone=oldTask&&oldTask.status==='done';
       const newStatus=document.getElementById('t-status').value;
       const data={title,desc,dept,userId,prio,due,status:newStatus,recurring};
       await TASKS_COL.doc(eid).update(data);
+      taskForEmail={id:eid,...data};
       if(newStatus==='done'&&!wasDone&&recurring!=='none'){
         const nextDue=addPeriod(due,recurring);
         await TASKS_COL.add({title,desc,dept,userId,prio,due:nextDue,status:'pending',recurring});
@@ -2222,10 +2307,14 @@ async function saveTask(){
         toast('تم تحديث المهمة بنجاح ✓','success');
       }
     }else{
-      await TASKS_COL.add({title,desc,dept,userId,prio,due,status:'pending',recurring});
+      const data={title,desc,dept,userId,prio,due,status:'pending',recurring};
+      const ref=await TASKS_COL.add(data);
+      taskForEmail={id:ref.id,...data};
+      isNewTask=true;
       toast('تم إسناد المهمة بنجاح ✓','success');
     }
     closeModal('task-modal');
+    if(notifyEmail&&taskForEmail)sendTaskEmail(null,taskForEmail,isNewTask);
   }catch(err){toast('فشل الحفظ: '+err.message,'error');}
 }
 
@@ -2354,11 +2443,13 @@ function copyInviteText(){
 function openEmailInvite(){
   const name=document.getElementById('inv-user-name').textContent;
   const u=users.find(x=>x.name===name);
-  const body=document.getElementById('inv-text').value;
-  const email=u?u.email:'';
-  const subject=encodeURIComponent('بيانات الدخول إلى نظام FinanceTrack');
-  const url=`mailto:${email}?subject=${subject}&body=${encodeURIComponent(body)}`;
-  window.open(url,'_blank');
+  if(!u){toast('تعذر العثور على المستخدم','error');return;}
+  if(!u.email){toast(`لا يوجد بريد إلكتروني مسجل لـ ${u.name}`,'warn');return;}
+  const message=document.getElementById('inv-text').value;
+  toast(`جارٍ إرسال الرسالة إلى ${u.name}...`,'success');
+  sendEmailJS(u.email,u.name,'بيانات الدخول إلى نظام FinanceTrack',message)
+    .then(()=>toast(`تم إرسال رسالة الدخول إلى ${u.name} ✓`,'success'))
+    .catch(err=>toast('فشل إرسال البريد: '+(err&&(err.text||err.message)||err),'error'));
 }
 
 

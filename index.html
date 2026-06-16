@@ -637,6 +637,12 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
         </div>
       </div>
 
+      <!-- Per-accountant reconciliation summary -->
+      <div class="card">
+        <div class="ch"><h2><i class="ti ti-users"></i>ملخص المطابقات لكل محاسب</h2></div>
+        <div id="recon-accountant-summary"></div>
+      </div>
+
       <div class="card">
         <div class="ch">
           <h2><i class="ti ti-clipboard-list"></i>المطابقات المُكلَّفة حالياً (قيد التنفيذ)</h2>
@@ -1614,6 +1620,48 @@ function lastDoneRecon(supplierId,excludeId){
 }
 
 /* ── Manager: view & cancel currently-assigned (pending) reconciliations ── */
+function renderReconAccountantSummary(){
+  const el=document.getElementById('recon-accountant-summary');
+  if(!el)return;
+
+  /* Build per-accountant stats from all reconciliations */
+  const supUsers=users.filter(u=>userDepts(u).includes('suppliers'));
+  if(!supUsers.length){el.innerHTML=empty('لا يوجد محاسبون في قسم الموردين');return;}
+
+  let h='';
+  supUsers.forEach(u=>{
+    const myRecons=reconciliations.filter(r=>r.accountantId===u.id);
+    const total=myRecons.length;
+    const done=myRecons.filter(r=>r.status==='done').length;
+    const pending=myRecons.filter(r=>r.status==='pending').length;
+    const pct=total?Math.round(done/total*100):0;
+    const col=pct>=70?'green':pct>=40?'amber':'red';
+    const colv=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+
+    h+=`<div class="ur" style="padding:1rem 1.5rem">
+      <div class="av ${avc(u.id)}">${ini(u.name)}</div>
+      <div class="ui" style="flex:1">
+        <div class="un">${u.name} <span style="font-size:11.5px;font-weight:400;color:var(--ts)">${RL[u.role]}</span></div>
+        <div style="display:flex;gap:1rem;margin-top:6px;flex-wrap:wrap">
+          <span class="tmi"><i class="ti ti-list" style="font-size:13px;color:var(--th)"></i>إجمالي: <strong>${total}</strong></span>
+          <span class="tmi" style="color:var(--green)"><i class="ti ti-circle-check" style="font-size:13px"></i>مكتمل: <strong>${done}</strong></span>
+          <span class="tmi" style="color:var(--amber)"><i class="ti ti-clock-hour-4" style="font-size:13px"></i>قيد التنفيذ: <strong>${pending}</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+          <div class="pb" style="flex:1"><div class="pf ${col}" style="width:${pct}%"></div></div>
+          <span style="font-size:13px;font-weight:700;color:${colv};min-width:40px">${pct}%</span>
+        </div>
+      </div>
+      ${total>0?`<div style="text-align:center;padding-right:8px">
+        <div style="font-size:11px;color:var(--ts);margin-bottom:4px">المتبقي</div>
+        <div class="pill ${pending>0?'pill-review':'pill-done'}" style="font-size:14px;font-weight:700;padding:5px 12px">${pending}</div>
+      </div>`:''}
+    </div>`;
+  });
+
+  el.innerHTML=h||empty('لا توجد مطابقات مسجّلة بعد');
+}
+
 function renderPendingReconAssignments(){
   const list=document.getElementById('pending-recon-list');
   const countEl=document.getElementById('pending-recon-count');
@@ -2023,6 +2071,7 @@ async function confirmAssignSample(){
 function renderReconciliationPage(){
   if(!currentUser||currentUser.type!=='manager')return;
   renderPendingReconAssignments();
+  renderReconAccountantSummary();
   const sel=document.getElementById('recon-accountant');
   const supDeptUsers=users.filter(u=>userDepts(u).includes('suppliers'));
   const prevVal=sel.value;

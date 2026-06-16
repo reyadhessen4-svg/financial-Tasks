@@ -1400,7 +1400,11 @@ function showPage(p,el){
   else if(p==='departments')renderDepts();
   else if(p==='users')renderUsers();
   else if(p==='reports')renderReports();
-  else if(p==='notifs')renderNotifs();
+  else if(p==='notifs'){
+    const key='ft_notif_seen_'+(currentUser?currentUser.type==='manager'?'mgr':currentUser.id:'');
+    localStorage.setItem(key,new Date().toISOString());
+    renderNotifs();
+  }
   else if(p==='mytasks')renderMyTasks();
   else if(p==='reconciliation')renderReconciliationPage();
   else if(p==='myrecon')renderMyRecon();
@@ -2093,6 +2097,13 @@ async function saveReconciliation(id){
       reasonDiff:reason,actionsTaken:actions,
       status:'done',completedAt:new Date().toISOString().slice(0,10)
     });
+    const r=reconciliations.find(x=>x.id===id);
+    const acc=r?uById(r.accountantId):null;
+    const diffLabel=diff===0?'متطابق ✓':`فرق: ${fmtMoney(diff)}`;
+    await addMgrNotif(
+      `📊 أتمّ ${acc?acc.name:'المحاسب'} مطابقة المورد "${r?r.supplierName:'—'}" — ${diffLabel}`,
+      'suppliers'
+    );
     toast('تم حفظ المطابقة وإقفالها بنجاح ✓','success');
   }catch(err){toast('فشل الحفظ: '+err.message,'error');}
 }
@@ -2134,6 +2145,14 @@ async function updateTaskStatus(id,newStatus,taskForRecurring){
       toast('تم اعتماد المهمة كمكتملة وإقفالها ✓','success');
     }else{
       toast(`تم تغيير الحالة إلى: ${SL[newStatus]}`,'success');
+    }
+    if(newStatus==='done'){
+      const t=taskForRecurring||tById(id);
+      const u=t?uById(t.userId):null;
+      await addMgrNotif(
+        `✅ أتمّ ${u?u.name:'المحاسب'} المهمة: "${t?t.title:'—'}"`,
+        t?t.dept:'all'
+      );
     }
   }catch(err){toast('فشل التحديث: '+err.message,'error');}
 }
@@ -2438,20 +2457,32 @@ function renderNotifs(){
     const myDepts=userDepts(u);
     list=sorted.filter(n=>n.dept==='all'||myDepts.includes(n.dept));
   }
+  const key='ft_notif_seen_'+(currentUser?currentUser.type==='manager'?'mgr':currentUser.id:'');
+  const lastSeen=localStorage.getItem(key)||'';
+  const unreadCount=list.filter(n=>(n.createdAt||'')>lastSeen).length;
   const listEl=document.getElementById('notif-list');
   if(listEl){
-    listEl.innerHTML=list.length?list.map(n=>`
-      <div class="nr">
+    listEl.innerHTML=list.length?list.map(n=>{
+      const isNew=(n.createdAt||'')>lastSeen;
+      return`<div class="nr ${isNew?'unread':''}">
         <div class="nd ${NOTIF_DOT[n.dept]||'nd-gray'}"></div>
         <div style="flex:1">
           <div class="nt">${n.text}</div>
           <div class="ntm">${DL[n.dept]||'كل الأقسام'} · ${fmtNotifTime(n.createdAt)}</div>
         </div>
         <button class="btn btn-sm btn-icon btn-danger nf-del" onclick="deleteNotification('${n.id}')" title="حذف الإشعار"><i class="ti ti-x"></i></button>
-      </div>`).join('') : empty('لا توجد إشعارات لقسمك حالياً');
+      </div>`;
+    }).join('') : empty('لا توجد إشعارات حالياً');
   }
   const bdg=document.getElementById('notif-bdg');
-  if(bdg)bdg.textContent=list.length;
+  if(bdg)bdg.textContent=unreadCount||'';
+}
+
+/* Send an automatic notification to the manager */
+async function addMgrNotif(text,dept='all'){
+  try{
+    await NOTIFS_COL.add({text,dept,createdAt:new Date().toISOString(),auto:true});
+  }catch(e){/* non-critical */}
 }
 
 async function addNotification(){

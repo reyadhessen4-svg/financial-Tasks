@@ -558,12 +558,32 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
 
     <!-- REPORTS (manager) -->
     <div class="page" id="page-reports">
-      <div class="ph"><h1>التقارير</h1><p>ملخص إنجاز الفريق لهذا الشهر</p></div>
+      <div class="ph">
+        <h1>التقارير</h1>
+        <p>ملخص إنجاز الفريق ومطابقات الموردين المكتملة</p>
+      </div>
       <div class="g2">
         <div class="card"><div class="ch"><h2><i class="ti ti-chart-pie"></i>نسب الإنجاز</h2></div><div id="rpt-depts"></div></div>
         <div class="card"><div class="ch"><h2><i class="ti ti-trophy"></i>أفضل أداء</h2></div><div id="rpt-top"></div></div>
       </div>
       <div class="card"><div class="ch"><h2><i class="ti ti-circle-check"></i>المهام المكتملة</h2></div><div id="rpt-done"></div></div>
+
+      <!-- Reconciliation report -->
+      <div class="card" style="margin-top:1.25rem">
+        <div class="ch">
+          <h2><i class="ti ti-scale"></i>تقرير مطابقات الموردين المكتملة</h2>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="rpt-recon-filter" onchange="renderReconReport()" class="btn btn-sm" style="font-family:var(--font)">
+              <option value="all">كل المطابقات</option>
+              <option value="diff">تحتوي فروقات فقط</option>
+              <option value="match">متطابقة تماماً فقط</option>
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="exportReconReport()"><i class="ti ti-file-spreadsheet"></i>تصدير CSV</button>
+          </div>
+        </div>
+        <div id="rpt-recon-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--bd)"></div>
+        <div style="overflow-x:auto"><table class="dtable" id="rpt-recon-table"></table></div>
+      </div>
     </div>
 
     <!-- SUPPLIER RECONCILIATION (manager) -->
@@ -2284,7 +2304,106 @@ function renderReports(){
     </div>`;
   });
   document.getElementById('rpt-done').innerHTML=dh||empty('لا توجد مهام مكتملة بعد');
+  renderReconReport();
 }
+
+/* ══════════════ RECONCILIATION REPORT ══════════════ */
+function renderReconReport(){
+  const filter=document.getElementById('rpt-recon-filter')?.value||'all';
+  const done=reconciliations.filter(r=>r.status==='done');
+  const filtered=done.filter(r=>{
+    if(filter==='diff')return r.difference!==0;
+    if(filter==='match')return r.difference===0;
+    return true;
+  }).sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||''));
+
+  /* Stats bar */
+  const totalDiff=done.filter(r=>r.difference!==0).length;
+  const totalMatch=done.filter(r=>r.difference===0).length;
+  const sumDiff=done.reduce((s,r)=>s+Math.abs(Number(r.difference)||0),0);
+  const statsEl=document.getElementById('rpt-recon-stats');
+  if(statsEl){
+    statsEl.innerHTML=[
+      {l:'إجمالي المطابقات',v:done.length,c:'var(--accent)'},
+      {l:'تحتوي فروقات',v:totalDiff,c:'var(--red)'},
+      {l:'متطابقة تماماً',v:totalMatch,c:'var(--green)'},
+      {l:'إجمالي الفروقات (بالأرقام)',v:fmtMoney(sumDiff),c:'var(--amber)'},
+    ].map(s=>`<div class="dept-ms"><div class="dsv" style="color:${s.c}">${s.v}</div><div class="dsl">${s.l}</div></div>`).join('');
+  }
+
+  /* Table */
+  const tbl=document.getElementById('rpt-recon-table');
+  if(!tbl)return;
+  if(!filtered.length){
+    tbl.innerHTML=`<tr><td style="padding:2rem;text-align:center;color:var(--th)">${done.length?'لا توجد مطابقات بهذا الفلتر':'لا توجد مطابقات مكتملة بعد'}</td></tr>`;
+    return;
+  }
+  let h=`<tr>
+    <th>#</th>
+    <th>اسم المورد</th>
+    <th>المحاسب</th>
+    <th>تاريخ الاكتمال</th>
+    <th>رصيد الشركة</th>
+    <th>رصيد المورد</th>
+    <th>الفارق</th>
+    <th>سبب الفرق</th>
+    <th>الإجراء المتخذ</th>
+  </tr>`;
+  filtered.forEach((r,i)=>{
+    const acc=uById(r.accountantId);
+    const hasDiff=r.difference!==0&&r.difference!==null&&r.difference!==undefined;
+    h+=`<tr>
+      <td style="color:var(--th)">${i+1}</td>
+      <td style="font-weight:600">${r.supplierName}</td>
+      <td>${acc?acc.name:'—'}</td>
+      <td>${r.completedAt||'—'}</td>
+      <td>${fmtMoney(r.companyBalance)}</td>
+      <td>${fmtMoney(r.supplierBalance)}</td>
+      <td style="${hasDiff?'color:var(--red);font-weight:700':'color:var(--green);font-weight:600'}">${fmtMoney(r.difference)}${!hasDiff?' ✓':''}</td>
+      <td style="font-size:12px;max-width:180px;white-space:normal">${r.reasonDiff||'—'}</td>
+      <td style="font-size:12px;max-width:180px;white-space:normal">${r.actionsTaken||'—'}</td>
+    </tr>`;
+  });
+  tbl.innerHTML=h;
+}
+
+function exportReconReport(){
+  const filter=document.getElementById('rpt-recon-filter')?.value||'all';
+  const done=reconciliations.filter(r=>r.status==='done');
+  const filtered=done.filter(r=>{
+    if(filter==='diff')return r.difference!==0;
+    if(filter==='match')return r.difference===0;
+    return true;
+  }).sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||''));
+
+  if(!filtered.length){toast('لا توجد بيانات لتصديرها','warn');return;}
+
+  const headers=['اسم المورد','المحاسب','تاريخ الاكتمال','رصيد الشركة','رصيد المورد','الفارق','سبب الفرق','الإجراء المتخذ'];
+  const rows=filtered.map(r=>{
+    const acc=uById(r.accountantId);
+    return[
+      r.supplierName,
+      acc?acc.name:'—',
+      r.completedAt||'—',
+      r.companyBalance??'',
+      r.supplierBalance??'',
+      r.difference??'',
+      r.reasonDiff||'',
+      r.actionsTaken||''
+    ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+
+  const csv='\uFEFF'+[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`مطابقات_الموردين_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('تم تصدير التقرير بنجاح ✓','success');
+}
+
 
 /* ══════════════ NOTIFICATIONS (filtered by department) ══════════════ */
 /* ══════════════ NOTIFICATIONS (Firestore-backed, filtered by department) ══════════════ */

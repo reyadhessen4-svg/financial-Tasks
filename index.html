@@ -329,7 +329,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
 .upload-zone:hover{border-color:var(--accent)}
 .dtable{width:100%;border-collapse:collapse;font-size:13px}
 .dtable th{text-align:right;padding:10px 14px;font-size:11px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--bd);background:#F8F9FC;white-space:nowrap}
-.dtable td{padding:10px 14px;border-bottom:1px solid var(--bd);white-space:nowrap}
+.dtable td{padding:10px 14px;border-bottom:1px solid var(--bd);vertical-align:middle}
+.dtable td:first-child{font-weight:600;white-space:nowrap}
+.dtable td:last-child{white-space:nowrap;width:1%}
 .dtable tr:last-child td{border-bottom:none}
 .dtable tr:hover td{background:#F9FAFF}
 .recon-item{padding:1.25rem 1.5rem;border-bottom:1px solid var(--bd)}
@@ -1834,15 +1836,16 @@ function renderReconciliationPage(){
     tbl.innerHTML='<tr><td style="padding:2rem;text-align:center;color:var(--th)">لا يوجد موردون — قم برفع ملف الموردين أولاً</td></tr>';
     return;
   }
-  let h='<tr><th>اسم المورد</th><th>آخر مطابقة</th><th>رصيد الشركة (آخر مطابقة)</th><th>الفارق (آخر مطابقة)</th><th>الحالة الحالية</th><th>إجراءات</th></tr>';
+  let h='<tr><th>اسم المورد</th><th>آخر مطابقة</th><th>الحالة الحالية</th><th>إجراءات</th></tr>';
   suppliers.forEach(s=>{
     const last=lastDoneRecon(s.id);
     const pending=reconciliations.find(r=>r.supplierId===s.id&&r.status==='pending');
+    const lastCell=last
+      ?`<div>${last.completedAt}</div><div style="font-size:11.5px;color:var(--th);margin-top:2px">رصيد الشركة: ${fmtMoney(last.companyBalance)} · الفارق: <span style="${last.difference!==0?'color:var(--red);font-weight:600':''}">${fmtMoney(last.difference)}</span></div>`
+      :'<span style="color:var(--th)">لم تتم من قبل</span>';
     h+=`<tr>
       <td style="font-weight:600">${s.name}</td>
-      <td>${last?last.completedAt:'<span style="color:var(--th)">لم تتم من قبل</span>'}</td>
-      <td>${last?fmtMoney(last.companyBalance):'—'}</td>
-      <td style="${last&&last.difference!==0?'color:var(--red);font-weight:600':''}">${last?fmtMoney(last.difference):'—'}</td>
+      <td>${lastCell}</td>
       <td>${pending?`<span class="pill pill-review"><i class="ti ti-clock-hour-4"></i>قيد التنفيذ — ${(uById(pending.accountantId)||{}).name||''}</span>`:'<span class="pill pill-pending">لا توجد مطابقة جارية</span>'}</td>
       <td>
         <div style="display:flex;gap:4px">

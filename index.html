@@ -855,6 +855,29 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
   </div>
 </div>
 
+<!-- ══ MODAL: EDIT RECONCILIATION ══ -->
+<div class="modal-bg" id="edit-recon-modal">
+  <div class="modal" style="width:520px">
+    <div class="modal-hd">
+      <h2><i class="ti ti-pencil"></i>تعديل بيانات المطابقة — <span id="er-supplier-name"></span></h2>
+      <button class="mc" onclick="closeModal('edit-recon-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <input type="hidden" id="er-id"/>
+    <div class="fr">
+      <div class="fg"><label>رصيد المورد بدفاتر الشركة</label><input type="number" step="0.01" id="er-company" oninput="calcEditDiff()"/></div>
+      <div class="fg"><label>رصيد المورد بدفاتره الخاصة</label><input type="number" step="0.01" id="er-supplier" oninput="calcEditDiff()"/></div>
+    </div>
+    <div class="fg"><label>الفارق</label><div class="diff-display" id="er-diff">—</div></div>
+    <div class="fg"><label>أسباب الفروق</label><textarea id="er-reason"></textarea></div>
+    <div class="fg"><label>الإجراءات المتخذة لإنهاء المطابقة</label><textarea id="er-actions"></textarea></div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('edit-recon-modal')">إلغاء</button>
+      <button class="btn btn-warning" onclick="reopenRecon()"><i class="ti ti-refresh"></i>إعادة فتح للمحاسب</button>
+      <button class="btn btn-primary" onclick="saveEditRecon()"><i class="ti ti-check"></i>حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL: USER ══ -->
 <div class="modal-bg" id="user-modal">
   <div class="modal">
@@ -1610,7 +1633,11 @@ function openReconHistory(supplierId){
             <div style="font-weight:700;font-size:14px">تمت في ${r.completedAt}</div>
             <div class="lk-note"><i class="ti ti-user"></i>المحاسب: ${acc?acc.name:'—'} · تاريخ التكليف: ${r.assignedAt||'—'}</div>
           </div>
-          <span class="pill pill-done"><i class="ti ti-circle-check"></i>مكتملة</span>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <span class="pill pill-done"><i class="ti ti-circle-check"></i>مكتملة</span>
+            <button class="btn btn-sm btn-warning" onclick="openEditRecon('${r.id}')"><i class="ti ti-pencil"></i>تعديل</button>
+            <button class="btn btn-sm" onclick="confirmReopenReconDirect('${r.id}')"><i class="ti ti-refresh"></i>إعادة فتح</button>
+          </div>
         </div>
         <div class="fr">
           <div class="mini-stat"><div class="ml">رصيد الشركة</div><div class="mv">${fmtMoney(r.companyBalance)}</div></div>
@@ -1638,7 +1665,96 @@ function openReconHistory(supplierId){
   openModal('recon-history-modal');
 }
 
-/* ── Manager: upload supplier file ── */
+/* ── Manager: edit or reopen a completed reconciliation ── */
+function openEditRecon(id){
+  const r=reconciliations.find(x=>x.id===id);if(!r)return;
+  const s=sById(r.supplierId);
+  document.getElementById('er-id').value=id;
+  document.getElementById('er-supplier-name').textContent=s?s.name:r.supplierName;
+  document.getElementById('er-company').value=r.companyBalance??'';
+  document.getElementById('er-supplier').value=r.supplierBalance??'';
+  document.getElementById('er-reason').value=r.reasonDiff||'';
+  document.getElementById('er-actions').value=r.actionsTaken||'';
+  calcEditDiff();
+  closeModal('recon-history-modal');
+  openModal('edit-recon-modal');
+}
+
+function calcEditDiff(){
+  const c=parseFloat(document.getElementById('er-company').value);
+  const s=parseFloat(document.getElementById('er-supplier').value);
+  const el=document.getElementById('er-diff');
+  if(isNaN(c)||isNaN(s)){el.textContent='—';el.style.color='';return;}
+  const diff=Math.round((c-s)*100)/100;
+  el.textContent=fmtMoney(diff)+(diff===0?' (متطابق)':'');
+  el.style.color=diff===0?'var(--green)':'var(--red)';
+}
+
+async function saveEditRecon(){
+  const id=document.getElementById('er-id').value;
+  const c=parseFloat(document.getElementById('er-company').value);
+  const s=parseFloat(document.getElementById('er-supplier').value);
+  if(isNaN(c)||isNaN(s)){toast('يرجى إدخال الرصيدين','warn');return;}
+  const diff=Math.round((c-s)*100)/100;
+  const reason=document.getElementById('er-reason').value.trim();
+  const actions=document.getElementById('er-actions').value.trim();
+  if(diff!==0&&!reason){toast('يوجد فارق — يرجى ذكر السبب','warn');return;}
+  try{
+    await RECON_COL.doc(id).update({
+      companyBalance:c,supplierBalance:s,difference:diff,
+      reasonDiff:reason,actionsTaken:actions
+    });
+    closeModal('edit-recon-modal');
+    toast('تم تحديث بيانات المطابقة بنجاح ✓','success');
+  }catch(err){toast('فشل الحفظ: '+err.message,'error');}
+}
+
+async function reopenRecon(){
+  const id=document.getElementById('er-id').value;
+  const r=reconciliations.find(x=>x.id===id);if(!r)return;
+  const acc=uById(r.accountantId);
+  showConfirm(
+    'إعادة فتح المطابقة',
+    `هل تريد إعادة فتح مطابقة "<strong>${r.supplierName}</strong>" لتظهر مرة أخرى للمحاسب <strong>${acc?acc.name:'—'}</strong>؟<br>ستُمسح البيانات المُدخلة السابقة ويمكنه إعادة تعبئتها من جديد.`,
+    'warn','ti-refresh',
+    async ()=>{
+      try{
+        await RECON_COL.doc(id).update({
+          status:'pending',completedAt:null,
+          companyBalance:null,supplierBalance:null,difference:null,
+          reasonDiff:'',actionsTaken:''
+        });
+        closeModal('edit-recon-modal');
+        toast(`تمت إعادة فتح مطابقة "${r.supplierName}" للمحاسب`,'success');
+      }catch(err){toast('فشل إعادة الفتح: '+err.message,'error');}
+    },
+    'إعادة الفتح'
+  );
+}
+
+function confirmReopenReconDirect(id){
+  const r=reconciliations.find(x=>x.id===id);if(!r)return;
+  const acc=uById(r.accountantId);
+  showConfirm(
+    'إعادة فتح المطابقة',
+    `هل تريد إعادة فتح مطابقة "<strong>${r.supplierName}</strong>" للمحاسب <strong>${acc?acc.name:'—'}</strong>؟<br>ستُمسح البيانات المُدخلة ويمكنه إعادة تعبئتها من جديد.`,
+    'warn','ti-refresh',
+    async ()=>{
+      try{
+        await RECON_COL.doc(id).update({
+          status:'pending',completedAt:null,
+          companyBalance:null,supplierBalance:null,difference:null,
+          reasonDiff:'',actionsTaken:''
+        });
+        closeModal('recon-history-modal');
+        toast(`تمت إعادة فتح مطابقة "${r.supplierName}" للمحاسب`,'success');
+      }catch(err){toast('فشل إعادة الفتح: '+err.message,'error');}
+    },
+    'إعادة الفتح'
+  );
+}
+
+
 async function handleSupplierFile(file){
   if(!file)return;
   const status=document.getElementById('supplier-upload-status');

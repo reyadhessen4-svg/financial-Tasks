@@ -848,6 +848,31 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
   </div>
 </div>
 
+<!-- ══ MODAL: ASSIGN SINGLE SUPPLIER RECON ══ -->
+<div class="modal-bg" id="assign-single-recon-modal">
+  <div class="modal" style="width:400px">
+    <div class="modal-hd">
+      <h2><i class="ti ti-user-plus"></i>تكليف بمطابقة المورد</h2>
+      <button class="mc" onclick="closeModal('assign-single-recon-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <input type="hidden" id="asr-supplier-id"/>
+    <div style="background:var(--accent-l);border-radius:var(--r-md);padding:10px 14px;margin-bottom:1rem;font-size:13.5px;font-weight:600;color:var(--accent-d);display:flex;align-items:center;gap:8px">
+      <i class="ti ti-building-warehouse"></i><span id="asr-supplier-name"></span>
+    </div>
+    <div class="fg">
+      <label>المحاسب المكلف</label>
+      <select id="asr-accountant"></select>
+    </div>
+    <div id="asr-already-warn" class="error-box" style="display:none">
+      <i class="ti ti-alert-triangle"></i> يوجد بالفعل مطابقة قيد التنفيذ لهذا المورد مع هذا المحاسب.
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('assign-single-recon-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="confirmAssignSingleRecon()"><i class="ti ti-send"></i>تكليف</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL: SUPPLIER ══ -->
 <div class="modal-bg" id="supplier-modal">
   <div class="modal" style="width:420px">
@@ -1779,6 +1804,49 @@ function confirmReopenReconDirect(id){
 }
 
 
+/* ── Assign a single supplier for reconciliation ── */
+function openAssignSingleRecon(supplierId){
+  const s=sById(supplierId);if(!s)return;
+  document.getElementById('asr-supplier-id').value=supplierId;
+  document.getElementById('asr-supplier-name').textContent=s.name;
+  document.getElementById('asr-already-warn').style.display='none';
+  const supUsers=users.filter(u=>userDepts(u).includes('suppliers'));
+  const sel=document.getElementById('asr-accountant');
+  sel.innerHTML=supUsers.length
+    ?supUsers.map(u=>`<option value="${u.id}">${u.name} (${RL[u.role]})</option>`).join('')
+    :'<option value="">لا يوجد موظفون في قسم الموردين</option>';
+  sel.onchange=()=>checkAlreadyPending(supplierId);
+  checkAlreadyPending(supplierId);
+  openModal('assign-single-recon-modal');
+}
+
+function checkAlreadyPending(supplierId){
+  const accId=document.getElementById('asr-accountant').value;
+  const already=reconciliations.find(r=>r.supplierId===supplierId&&r.accountantId===accId&&r.status==='pending');
+  document.getElementById('asr-already-warn').style.display=already?'block':'none';
+}
+
+async function confirmAssignSingleRecon(){
+  const supplierId=document.getElementById('asr-supplier-id').value;
+  const accId=document.getElementById('asr-accountant').value;
+  if(!accId){toast('اختر محاسباً أولاً','warn');return;}
+  const s=sById(supplierId);if(!s)return;
+  const already=reconciliations.find(r=>r.supplierId===supplierId&&r.accountantId===accId&&r.status==='pending');
+  if(already){toast('يوجد بالفعل مطابقة قيد التنفيذ لهذا المورد مع هذا المحاسب','warn');return;}
+  const today=new Date().toISOString().slice(0,10);
+  try{
+    await RECON_COL.add({
+      supplierId:s.id,supplierName:s.name,accountantId:accId,
+      companyBalance:null,supplierBalance:null,difference:null,
+      reasonDiff:'',actionsTaken:'',status:'pending',
+      assignedAt:today,completedAt:null
+    });
+    const acc=uById(accId);
+    closeModal('assign-single-recon-modal');
+    toast(`تم تكليف ${acc?acc.name:'المحاسب'} بمطابقة "${s.name}" ✓`,'success');
+  }catch(err){toast('فشل التكليف: '+err.message,'error');}
+}
+
 async function handleSupplierFile(file){
   if(!file)return;
   const status=document.getElementById('supplier-upload-status');
@@ -1990,6 +2058,7 @@ function renderReconciliationPage(){
       <td>
         <div style="display:flex;gap:4px">
           <button class="btn btn-sm btn-icon" onclick="openReconHistory('${s.id}')" title="سجل المطابقات السابقة"><i class="ti ti-history"></i></button>
+          <button class="btn btn-sm" onclick="openAssignSingleRecon('${s.id}')" title="تكليف محاسب بمطابقة هذا المورد"><i class="ti ti-user-plus"></i>تكليف</button>
           <button class="btn btn-sm btn-icon" onclick="openEditSupplier('${s.id}')" title="تعديل الاسم"><i class="ti ti-pencil"></i></button>
           <button class="btn btn-sm btn-icon btn-danger" onclick="askDelSupplier('${s.id}')" title="حذف المورد"><i class="ti ti-trash"></i></button>
         </div>
